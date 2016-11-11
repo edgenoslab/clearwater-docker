@@ -3,11 +3,12 @@
 sudo groupadd -f -r kube-cert
 
 MASTER_IP="10.64.33.81"
-SERVING_IP="172.30.0.1"
+# Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
+MASTER_SERVICE="10.123.240.1"
 
 EXTRA_SANS=(
     IP:$MASTER_IP
-    IP:$SERVING_IP
+    IP:$MASTER_SERVICE
     DNS:kubernetes
     DNS:kubernetes.default
     DNS:kubernetes.default.svc
