@@ -1,0 +1,23 @@
+[Unit]
+Description=Kubernetes API server
+Documentation=https://github.com/kubernetes/kubernetes
+After=etcd.service
+Requires=network.target
+# Wants=
+# Conflicts=openshift-master.service
+
+[Service]
+Type=notify
+User=root
+
+Environment=KUBERNETES_RELEASE_VERSION=1.3.10
+EnvironmentFile=/etc/sysconfig/kube-apiserver
+
+WorkingDirectory=/opt/kubernetes
+
+ExecStart=/opt/kubernetes/1.3.10/kube-apiserver $KUBE_APISERVER_OPTS
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
