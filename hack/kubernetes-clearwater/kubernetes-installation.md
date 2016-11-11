@@ -1,7 +1,63 @@
 Tables of content
 ------------------
 
-### Build
+Download release
+
+    [vagrant@localhost ~]$ wget -c https://github.com/kubernetes/kubernetes/releases/download/v1.3.10/kubernetes.tar.gz
+    --2016-11-11 01:58:59--  https://github.com/kubernetes/kubernetes/releases/download/v1.3.10/kubernetes.tar.gz
+    Resolving github.com (github.com)... 192.30.253.113, 192.30.253.112
+    Connecting to github.com (github.com)|192.30.253.113|:443... connected.
+    HTTP request sent, awaiting response... 302 Found
+    Location: https://github-cloud.s3.amazonaws.com/releases/20580498/b73a52cc-9f80-11e6-8085-e5bdc11f8bd8.gz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAISTNZFOVBIJMK3TQ%2F20161111%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20161111T015900Z&X-Amz-Expires=300&X-Amz-Signature=77d9df5701f07bd4922654ac7aad99ba4a1aa65d32c2cc8c258170b710511645&X-Amz-SignedHeaders=host&actor_id=0&response-content-disposition=attachment%3B%20filename%3Dkubernetes.tar.gz&response-content-type=application%2Foctet-stream [following]
+    --2016-11-11 01:59:00--  https://github-cloud.s3.amazonaws.com/releases/20580498/b73a52cc-9f80-11e6-8085-e5bdc11f8bd8.gz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAISTNZFOVBIJMK3TQ%2F20161111%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20161111T015900Z&X-Amz-Expires=300&X-Amz-Signature=77d9df5701f07bd4922654ac7aad99ba4a1aa65d32c2cc8c258170b710511645&X-Amz-SignedHeaders=host&actor_id=0&response-content-disposition=attachment%3B%20filename%3Dkubernetes.tar.gz&response-content-type=application%2Foctet-stream
+    Resolving github-cloud.s3.amazonaws.com (github-cloud.s3.amazonaws.com)... 52.216.0.128
+    Connecting to github-cloud.s3.amazonaws.com (github-cloud.s3.amazonaws.com)|52.216.0.128|:443... connected.
+    HTTP request sent, awaiting response... 206 Partial Content
+    Length: 1495467451 (1.4G), 1495466858 (1.4G) remaining [application/octet-stream]
+    Saving to: 鈥榢ubernetes.tar.gz鈥▒
+
+    27% [=========>                             ] 405,582,941 3.21MB/s  eta 8m 34s
+
+    [vagrant@localhost ~]$ sudo tar -C /opt -zxf kubernetes.tar.gz kubernetes/server/kubernetes-server-linux-amd64.tar.gz
+
+    [vagrant@localhost ~]$ sudo tar -tzf /opt/kubernetes/server/kubernetes-server-linux-amd64.tar.gz
+    kubernetes/
+    kubernetes/addons/
+    kubernetes/kubernetes-src.tar.gz
+    kubernetes/server/
+    kubernetes/server/bin/
+    kubernetes/server/bin/kube-proxy.tar
+    kubernetes/server/bin/kube-controller-manager
+    kubernetes/server/bin/kube-proxy.docker_tag
+    kubernetes/server/bin/federation-apiserver.docker_tag
+    kubernetes/server/bin/federation-controller-manager.docker_tag
+    kubernetes/server/bin/kube-scheduler
+    kubernetes/server/bin/kube-scheduler.docker_tag
+    kubernetes/server/bin/kube-controller-manager.tar
+    kubernetes/server/bin/kubectl
+    kubernetes/server/bin/kube-apiserver.docker_tag
+    kubernetes/server/bin/federation-apiserver.tar
+    kubernetes/server/bin/kube-apiserver.tar
+    kubernetes/server/bin/federation-controller-manager.tar
+    kubernetes/server/bin/federation-apiserver
+    kubernetes/server/bin/kube-dns
+    kubernetes/server/bin/kubemark
+    kubernetes/server/bin/kubelet
+    kubernetes/server/bin/kube-proxy
+    kubernetes/server/bin/kube-scheduler.tar
+    kubernetes/server/bin/kube-apiserver
+    kubernetes/server/bin/kube-controller-manager.docker_tag
+    kubernetes/server/bin/federation-controller-manager
+    kubernetes/server/bin/hyperkube
+    kubernetes/LICENSES
+
+    [vagrant@localhost ~]$ sudo tar -C /opt -zxf /opt/kubernetes/server/kubernetes-server-linux-amd64.tar.gz
+
+    [vagrant@localhost ~]$ sudo ls /opt/kubernetes/
+    1.3.10  addons  kubernetes-src.tar.gz  LICENSES  server
+
+
+### Build (for development option)
 
 使用git
 
@@ -144,14 +200,14 @@ Reference
 
 * The kube-apiserver
 
-Env and service file
+Service and env file
 
     [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/kube-apiserver.service
     [Unit]
     Description=Kubernetes API server
     Documentation=https://github.com/kubernetes/kubernetes
     After=etcd.service
-    Requires=network.target
+    # Requires=
     # Wants=
     # Conflicts=openshift-master.service
 
@@ -164,7 +220,7 @@ Env and service file
 
     WorkingDirectory=/opt/kubernetes
 
-    ExecStart=/opt/kubernetes/1.3.10/kube-apiserver ${KUBE_APISERVER_OPTS}
+    ExecStart=/opt/kubernetes/1.3.10/kube-apiserver KUBE_APISERVER_OPTS
 
     Restart=on-failure
 
@@ -237,6 +293,7 @@ Manually install (with bugfix)
 
     [vagrant@localhost ~]$ sudo systemctl start kube-apiserver.service
     Job for kube-apiserver.service failed because the control process exited with error code. See "systemctl status kube-apiserver.service" and "journalctl -xe" for details.
+
     [vagrant@localhost ~]$ sudo tail -100 /var/log/messages
     Nov 10 21:05:28 localhost systemd: kube-apiserver.service holdoff time over, scheduling restart.
     Nov 10 21:05:28 localhost systemd: Ignoring invalid environment assignment 'KUBE_APISERVER_OPT=--admission-control=AlwaysAdmit \
@@ -348,7 +405,7 @@ Deep dive int kube-apiserver
         ]
       }
 
-Cofigure *kubectl*
+Configure *kubectl*
 
     [vagrant@localhost ~]$ kubectl config set-cluster kube --server=https://10.64.33.81:6443
     cluster "kube" set.
@@ -389,44 +446,82 @@ Cofigure *kubectl*
 
 * The kube-controller-manager
 
+Service and env file
+
+    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/system/kube-controller-manager.service
+    [Unit]
+    Description=Kubernetes controller manager
+    Documentation=https://github.com/kubernetes/kubernetes
+    # After=
+    # Requires=
+    # Wants=
+    # Conflicts=
+
+    [Service]
+    Type=notify
+    User=root
+
+    WorkingDirectory=/opt/kubernetes
+
+    Environment=KUBERNETES_RELEASE_VERSION=1.3.10
+    EnvironmentFile=/etc/sysconfig/kube-controller-manager
+
+    ExecStart=/opt/kubernetes/server/bin/kube-controller-manager $KUBE_CTLMGR_OPTS
+
+    Restart=on-failure
+
+    [Install]
+    WantedBy=multi-user.target
+
+    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/conf/kube-controller-manager
+    # KUBE_CTLMGR_VERSION=1.3.10
+
+    HOSTNAME_OVERRIDE=10.64.33.81
+
+    # --cloud-config="": The path to the cloud provider configuration file
+
+    # --cloud-provider="": The provider for cloud services
+
+    # --service-cluster-ip-range=<nil>: A CIDR notation IP range
+    # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
+    SERVICE_CIDR=10.123.240.0/20
+    # SERVICE_MASTER=10.123.240.1
+    # SERVICE_DNS=10.123.240.10
+
+    # --service-node-port-range=: default '30000-32767'
+
+    KUBE_CTLMGR_OPTS="--address=0.0.0.0 \
+      --cluster-cidr=10.120.0.0/14 \
+      --cluster-name=kubernetes \
+      --enable-garbage-collector=false \
+      --kubeconfig=/srv/kubernetes/kubeconfig \
+      --master=https://10.64.33.81:6443 \
+      --port=10252 \
+      --root-ca-file=/srv/kubernetes/ca.crt \
+      --service-account-private-key-file=/srv/kubernetes/server.key \
+      --service-cluster-ip-range=10.123.240.0/20 \
+      --v=2"
+
+Manually install
+
+    [vagrant@localhost ~]$ sudo cp .kube/config /srv/kubernetes/kubeconfig
+
+    [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/conf/kube-controller-manager /etc/sysconfig/
+
+    [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/system/kube-controller-manager.service /etc/systemd/system
+
+    [vagrant@localhost ~]$ sudo systemctl enable kube-controller-manager.service    Created symlink from /etc/systemd/system/multi-user.target.wants/kube-controller-manager.service to /etc/systemd/system/kube-controller-manager.service.
+
+    [vagrant@localhost ~]$ sudo systemctl start kube-controller-manager.service
+    Job for kube-controller-manager.service failed because the control process exited with error code. See "systemctl status kube-controller-manager.service" and "journalctl -xe" for details.
+
+    [vagrant@localhost ~]$ sudo systemctl daemon-reload
+
+    [vagrant@localhost ~]$ sudo systemctl restart kube-controller-manager
+
+* The kube-scheduler
+
 Env and service file
-
-```
-
-[vagrant@localhost ~]$ cat kubernetes/centos/kube-controller-manager.service
-[Unit]
-Description=Kubernetes controller manager
-Documentation=https://github.com/kubernetes/kubernetes
-# After=
-# Requires=
-# Wants=
-# Conflicts=
-
-[Service]
-Type=notify
-User=root
-WorkingDirectory=/opt/kubernetes
-
-Environment=KUBE_CTL_MGR_VERSION=1.3.10
-Environment=HOSTNAME_OVERRIDE=10.64.33.81
-
-ExecStart=/opt/kubernetes/$KUBE_CTL_MGR_VERSION/kube-controller-manager \
-  --address=0.0.0.0 \
-  --cloud-provider="" \
-  --enable-garbage-collector=false \
-  --kubeconfig="" \
-  --master=https://10.64.33.81 \
-  --port=10252 \
-  --root-ca-file=/srv/kubernetes/ca.crt \
-  --service-account-private-key-file=/srv/kubernetes/server.crt \
-  --service-cluster-ip-range="" \
-  --v=2
-
-Restart=On-Failure
-
-[Install]
-WantBy=multi-user.target
-
 
 [vagrant@localhost ~]$ cat kubernetes/centos/kube-scheduler.service
 [Unit]
@@ -536,7 +631,6 @@ KillMode=process
 [Install]
 WantedBy=multi-user.target
 
-```
 
 * Run as PODs
 
