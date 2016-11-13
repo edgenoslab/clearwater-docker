@@ -1,7 +1,58 @@
+Kubernetes DevOps
+==================
+
 Tables of content
 ------------------
 
-Download release
+* Prerequisites
+
+* Binaries
+
+>* Download release
+
+>* Build from source
+
+* Generate CA and certs
+
+* Systemd services - master
+
+>* Install kube-apiserver
+
+>* Install kube-controller-manager server
+
+>* Install kube-scheduler server
+
+>* Install kubelet server
+
+>* Install kube-proxy server
+
+* Load POD image
+
+* Kubernetes addons
+
+>* Start kube-dns
+
+>* Start kubernetes-dashboard
+
+* Install node - worker
+
+Prerequisites
+--------------
+
+Host firewall
+
+    [vagrant@localhost ~]$ sudo systemctl disable firewalld.service
+
+Etcd must be installed
+
+Docker is required
+
+软件的可执行程序文件
+-------------------
+
+### Download release
+
+For example
 
     [vagrant@localhost ~]$ wget -c https://github.com/kubernetes/kubernetes/releases/download/v1.3.10/kubernetes.tar.gz
     --2016-11-11 01:58:59--  https://github.com/kubernetes/kubernetes/releases/download/v1.3.10/kubernetes.tar.gz
@@ -56,8 +107,7 @@ Download release
     [vagrant@localhost ~]$ sudo ls /opt/kubernetes/
     1.3.10  addons  kubernetes-src.tar.gz  LICENSES  server
 
-
-### Build (for development option)
+### Build (development option)
 
 使用git
 
@@ -73,7 +123,7 @@ Download release
 
     [tangfx@localhost kubernetes]$ git tag --list
 
-使用v1.3.10
+检出v1.3.10
 
     [tangfx@localhost kubernetes]$ git checkout v1.3.10
     Note: checking out 'v1.3.10'.
@@ -93,11 +143,12 @@ Download release
     HEAD detached at v1.3.10
     nothing to commit, working directory clean
 
-Make
+Golang语言
 
     [tangfx@localhost kubernetes]$ go version
     go version go1.6.2 linux/amd64
 
+Make
     [tangfx@localhost kubernetes]$ make all GOFLAGS=-v
     hack/build-go.sh
     Go version: go version go1.6.2 linux/amd64
@@ -161,15 +212,16 @@ Make
     [vagrant@localhost kubernetes]$ _output/bin/kubectl version --client
     Client Version: version.Info{Major:"1", Minor:"3+", GitVersion:"v1.3.10-dirty", GitCommit:"c3e367ec9eae7338ac4e2a57f293634891319b7c", GitTreeState:"dirty", BuildDate:"2016-11-09T15:11:23Z", GoVersion:"go1.6.2", Compiler:"gc", Platform:"linux/amd64"}
 
-* Place binaries
+Place binaries
 
-For continuously integration
+    [vagrant@localhost ~]$ sudo chown vagrant: /opt/kubernetes/1.3.10
 
     [vagrant@localhost ~]$ mkdir bin
 
     [vagrant@localhost ~]$ ln -s /opt/kubernetes/1.3.10/{kubectl,kubelet,kube-apiserver,kube-controller-manager,kube-scheduler,kube-proxy,hyperkube} bin
 
-### Create/Update Kubernetes CA and Certs
+Generate CA and Certs
+------------------------
 
 Using [saltbase make-ca-cert.sh](https://github.com/kubernetes/kubernetes/tree/master/cluster/saltbase/salt/generate-cert)
 
@@ -189,77 +241,80 @@ easy-rsa reference => https://github.com/OpenVPN/easy-rsa
     [vagrant@localhost ~]$ ls /srv/kubernetes
     ca.crt  kubecfg.crt  kubecfg.key  server.cert  server.key
 
-### Systemd service
+Systemd service
+----------------
 
-* Run all as systemd services
+### Run all components as systemd services
 
 Reference
 
     https://github.com/kubernetes/kubernetes/tree/master/cluster/centos/master/scripts
 
-
 * The kube-apiserver
 
-Service and env file
+Service file
 
     [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/kube-apiserver.service
     [Unit]
     Description=Kubernetes API server
     Documentation=https://github.com/kubernetes/kubernetes
     After=etcd.service
-    # Requires=
+    Requires=etcd.service
     # Wants=
     # Conflicts=openshift-master.service
 
     [Service]
     Type=notify
+    NotifyAccess=all
+    # Type=simple
     User=root
 
-    Environment=KUBERNETES_RELEASE_VERSION=1.3.10
+    Environment=KUBERNETES_BUILD_VERSION=1.3.10
     EnvironmentFile=/etc/sysconfig/kube-apiserver
-
     WorkingDirectory=/opt/kubernetes
 
-    ExecStart=/opt/kubernetes/1.3.10/kube-apiserver KUBE_APISERVER_OPTS
+    ExecStart=/opt/kubernetes/server/bin/kube-apiserver $KUBE_APISERVER_OPTS
+    # ExecStart=/bin/bash -c "/opt/kubernetes/${KUBERNETES_BUILD_VERSION}/centos/bin/kube-apiserver ${KUBE_APISERVER_OPTS}"
 
-    Restart=on-failure
+    Restart=always
+    # Restart=on-failure
 
     [Install]
     WantedBy=multi-user.target
 
+Opts file
+
     [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/conf/kube-apiserver
-
     # KUBE_APISERVER_VERSION=1.3.10
-
-    HOSTNAME_OVERRIDE=10.64.33.81
 
     # --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
 
     # --advertise-address=<nil>: IP address to advertise the apiserver to members of the cluster, must be reachable by the cluster
-    ADVERTISE_APISERVER=10.64.33.81
+    # ADVERTISE_APISERVER=10.64.33.81
 
     # --cert-dir="/var/run/kubernetes"
-    CA_CERTS=/srv/kubernetes
+    # CERT_DIR=/srv/kubernetes
 
     # --enable-swagger-ui[=false]: Enables swagger ui at /swagger-ui
-    SWAGGER_UI=false
+    # ENABLE_SWAGGER_UI=false
 
     # --etcd-servers=: comma separated etcd servers to connect (http://ip:port)
-    ETCD_ENDPOINTS=http://10.64.33.81:2379
+    # ETCD_SERVERS=http://10.64.33.81:2379
 
     # --master-service-namespace="default": in which the kubernetes master services should be injected into pods
 
     # --runtime-config=: A set of key=value pairs such as apis/<groupVersion>=true/false, also  apis/<groupVersion>/<resource>
-    RUNTIME_CONFIG=api/all=true
+    # RUNTIME_CONFIG=api/all=true
 
     # --secure-port=6443: The port on which to serve HTTPS
-    SECURE_PORT=6443
+    # SECURE_PORT=6443
 
     # --service-cluster-ip-range=<nil>: A CIDR notation IP range
     # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
-    SERVICE_CIDR=10.123.240.0/20
-    # SERVICE_MASTER=10.123.240.1
-    # SERVICE_DNS=10.123.240.10
+    # CLUSTER_CIDR=10.120.0.0/14
+    # SERVICE_CIDR=10.123.240.0/20
+    # CLUSTER_MASTER=10.123.240.1
+    # CLUSTER_DNS=10.123.240.10
 
     # --service-node-port-range=: default '30000-32767'
 
@@ -282,7 +337,7 @@ Service and env file
       --tls-private-key-file=/srv/kubernetes/server.key \
       --v=2"
 
-Manually install (with bugfix)
+Manually install
 
     [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/conf/kube-apiserver  /etc/sysconfig/
 
@@ -291,47 +346,36 @@ Manually install (with bugfix)
     [vagrant@localhost ~]$ sudo systemctl enable kube-apiserver.service
     Created symlink from /etc/systemd/system/multi-user.target.wants/kube-apiserver.service to /etc/systemd/system/kube-apiserver.service.
 
-    [vagrant@localhost ~]$ sudo systemctl start kube-apiserver.service
-    Job for kube-apiserver.service failed because the control process exited with error code. See "systemctl status kube-apiserver.service" and "journalctl -xe" for details.
+Experimental run
 
-    [vagrant@localhost ~]$ sudo tail -100 /var/log/messages
-    Nov 10 21:05:28 localhost systemd: kube-apiserver.service holdoff time over, scheduling restart.
-    Nov 10 21:05:28 localhost systemd: Ignoring invalid environment assignment 'KUBE_APISERVER_OPT=--admission-control=AlwaysAdmit \
-    Nov 10 21:05:28 localhost systemd:  --advertise-address=$ADVERTISE_APISERVER \
-    Nov 10 21:05:28 localhost systemd:  --allow-privileged=true \
-    Nov 10 21:05:28 localhost systemd:  --apiserver-count=1 \
-    Nov 10 21:05:28 localhost systemd:  --bind-address=0.0.0.0 \
-    Nov 10 21:05:28 localhost systemd:  --cert-dir=$CA_CERTS \
-    Nov 10 21:05:28 localhost systemd:  --cloud-config="" \
-    Nov 10 21:05:28 localhost systemd:  --cloud-provider="" \
-    Nov 10 21:05:28 localhost systemd:  --enable-swagger-ui=$SWAGGER_UI \
-    Nov 10 21:05:28 localhost systemd:  --etcd-servers=${ETCD_ENDPOINTS} \
-    Nov 10 21:05:28 localhost systemd:  --insecure-bind-address=127.0.0.1 \
-    Nov 10 21:05:28 localhost systemd:  --insecure-port=8080 \
-    Nov 10 21:05:28 localhost systemd:  --master-service-namespace=default \
-    Nov 10 21:05:28 localhost systemd:  --runtime-config=$RUNTIME_CONFIG \
-    Nov 10 21:05:28 localhost systemd:  --secure-port=$SECURE_PORT \
-    Nov 10 21:05:28 localhost systemd:  --service-cluster-ip-range=${SERVICE_CIDR} \
-    Nov 10 21:05:28 localhost systemd:  --v=2 ': /etc/sysconfig/kube-apiserver
-    Nov 10 21:05:28 localhost systemd: Starting Kubernetes API server...
-    Nov 10 21:05:28 localhost systemd: Failed at step EXEC spawning /opt/kubernetes/${KUBERNETES_RELEASE_VERSION}/kube-apiserver: No such file or directory
-    Nov 10 21:05:28 localhost systemd: kube-apiserver.service: main process exited, code=exited, status=203/EXEC
-    Nov 10 21:05:28 localhost systemd: Failed to start Kubernetes API server.
-    Nov 10 21:05:28 localhost systemd: Unit kube-apiserver.service entered failed state.
-    Nov 10 21:05:28 localhost systemd: kube-apiserver.service failed.
-    Nov 10 21:05:28 localhost systemd: kube-apiserver.service holdoff time over, scheduling restart.
-    Nov 10 21:05:28 localhost systemd: start request repeated too quickly for kube-apiserver.service
-    Nov 10 21:05:28 localhost systemd: Failed to start Kubernetes API server.
-    Nov 10 21:05:28 localhost systemd: Unit kube-apiserver.service entered failed state.
-    Nov 10 21:05:28 localhost systemd: kube-apiserver.service failed.
+    [vagrant@localhost ~]$ KUBE_APISERVER_OPTS="--admission-control=AlwaysAdmit \
+    >       --advertise-address=10.64.33.81 \
+    >       --allow-privileged=true \
+    >       --apiserver-count=1 \
+    >       --bind-address=0.0.0.0 \
+    >       --cert-dir=/srv/kubernetes \
+    >       --client-ca-file=/srv/kubernetes/ca.crt \
+    >       --enable-swagger-ui=false \
+    >       --etcd-servers=http://10.64.33.81:2379 \
+    >       --insecure-bind-address=127.0.0.1 \
+    >       --insecure-port=8080 \
+    >       --master-service-namespace=default \
+    >       --runtime-config=api/all=true \
+    >       --secure-port=6443 \
+    >       --service-cluster-ip-range=10.123.240.0/20 \
+    >       --tls-cert-file=/srv/kubernetes/server.crt \
+    >       --tls-private-key-file=/srv/kubernetes/server.key \
+    >       --v=2"; sudo /opt/kubernetes/server/bin/kube-apiserver $KUBE_APISERVER_OPTS
 
-    [vagrant@localhost ~]$ sudo systemctl stop kube-apiserver.service
+First start
 
     [vagrant@localhost ~]$ sudo systemctl daemon-reload
 
-    [vagrant@localhost ~]$ sudo systemctl restart kube-apiserver
+    [vagrant@localhost ~]$ sudo systemctl start kube-apiserver.service
 
-    [vagrant@localhost ~]$ sudo systemctl -l status kube-apiserver
+Validation
+
+    [vagrant@localhost ~]$ sudo systemctl -l status kube-apiserver.service
     鈼▒ kube-apiserver.service - Kubernetes API server
        Loaded: loaded (/etc/systemd/system/kube-apiserver.service; enabled; vendor preset: disabled)
        Active: active (running) since Thu 2016-11-10 22:43:54 UTC; 19s ago
@@ -349,7 +393,11 @@ Manually install (with bugfix)
     Nov 10 22:43:54 localhost.localdomain kube-apiserver[5842]: I1110 22:43:54.505191    5842 genericapiserver.go:734] Serving insecurely on 127.0.0.1:8080
     Nov 10 22:43:54 localhost.localdomain systemd[1]: Started Kubernetes API server.
 
-Deep dive int kube-apiserver
+    [vagrant@localhost ~]$ sudo journalctl --follow --no-pager --pager-end --no-tail -u kube-apiserver.service
+
+    [vagrant@localhost ~]$ sudo tail -100 /var/log/messages
+
+Deep dive into kube-apiserver
 
     [vagrant@localhost ~]$ etcdctl ls
     /registry
@@ -405,7 +453,7 @@ Deep dive int kube-apiserver
         ]
       }
 
-Configure *kubectl*
+Command *kubectl*
 
     [vagrant@localhost ~]$ kubectl config set-cluster kube --server=https://10.64.33.81:6443
     cluster "kube" set.
@@ -446,7 +494,7 @@ Configure *kubectl*
 
 * The kube-controller-manager
 
-Service and env file
+Service file
 
     [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/system/kube-controller-manager.service
     [Unit]
@@ -455,42 +503,48 @@ Service and env file
     # After=
     # Requires=
     # Wants=
-    # Conflicts=
+    # Conflicts=openshift-master.service
 
     [Service]
-    Type=notify
+    # Type=notify
+    # NotifyAccess=none
+    Type=simple
     User=root
 
+    Environment=KUBERNETES_BUILD_VERSION=1.3.10
+    EnvironmentFile=/etc/sysconfig/kube-controller-manager
     WorkingDirectory=/opt/kubernetes
 
-    Environment=KUBERNETES_RELEASE_VERSION=1.3.10
-    EnvironmentFile=/etc/sysconfig/kube-controller-manager
+    ExecStart=/opt/kubernetes/server/bin/kube-controller-manager $KUBE_CONTROLLER_MANAGER_OPTS
+    # ExecStart=/bin/bash -c "/opt/kubernetes/${KUBERNETES_BUILD_VERSION}/centos/bin/kube-controller-manager ${KUBE_CONTROLLER_MANAGER_OPTS}"
 
-    ExecStart=/opt/kubernetes/server/bin/kube-controller-manager $KUBE_CTLMGR_OPTS
-
+    # Restart=always
     Restart=on-failure
 
     [Install]
     WantedBy=multi-user.target
 
-    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/conf/kube-controller-manager
-    # KUBE_CTLMGR_VERSION=1.3.10
+Opts file
 
-    HOSTNAME_OVERRIDE=10.64.33.81
+    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/conf/kube-controller-manager
+    # KUBE_CONTROLLER_MANAGER_VERSION=1.3.10
+
+    # ADDRESS_LISTEN=10.64.33.81
 
     # --cloud-config="": The path to the cloud provider configuration file
 
     # --cloud-provider="": The provider for cloud services
 
+    # MASTER_ADDRESS=https://10.64.33.81:6443
+
     # --service-cluster-ip-range=<nil>: A CIDR notation IP range
     # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
-    SERVICE_CIDR=10.123.240.0/20
-    # SERVICE_MASTER=10.123.240.1
-    # SERVICE_DNS=10.123.240.10
+    # CLUSTER_CIDR=10.120.0.0/14
+    # SERVICE_CIDR=10.123.240.0/20
+    # CLUSTER_MASTER=10.123.240.1
+    # CLUSTER_DNS=10.123.240.10
 
-    # --service-node-port-range=: default '30000-32767'
-
-    KUBE_CTLMGR_OPTS="--address=0.0.0.0 \
+    KUBE_CONTROLLER_MANAGER_OPTS="--address=10.64.33.81 \
       --cluster-cidr=10.120.0.0/14 \
       --cluster-name=kubernetes \
       --enable-garbage-collector=false \
@@ -510,130 +564,851 @@ Manually install
 
     [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/system/kube-controller-manager.service /etc/systemd/system
 
-    [vagrant@localhost ~]$ sudo systemctl enable kube-controller-manager.service    Created symlink from /etc/systemd/system/multi-user.target.wants/kube-controller-manager.service to /etc/systemd/system/kube-controller-manager.service.
+    [vagrant@localhost ~]$ sudo systemctl enable kube-controller-manager.service    
+    Created symlink from /etc/systemd/system/multi-user.target.wants/kube-controller-manager.service to /etc/systemd/system/kube-controller-manager.service.
 
-    [vagrant@localhost ~]$ sudo systemctl start kube-controller-manager.service
-    Job for kube-controller-manager.service failed because the control process exited with error code. See "systemctl status kube-controller-manager.service" and "journalctl -xe" for details.
+Experimental run
+
+    [vagrant@localhost ~]$ KUBE_CTLMGR_OPTS="--address=0.0.0.0 \
+    >       --cluster-cidr=10.120.0.0/14 \
+    >       --cluster-name=kubernetes \
+    >       --enable-garbage-collector=false \
+    >       --kubeconfig=/srv/kubernetes/kubeconfig \
+    >       --master=https://10.64.33.81:6443 \
+    >       --port=10252 \
+    >       --root-ca-file=/srv/kubernetes/ca.crt \
+    >       --service-account-private-key-file=/srv/kubernetes/server.key \
+    >       --service-cluster-ip-range=10.123.240.0/20 \
+    >       --v=2"; sudo /opt/kubernetes/server/bin/kube-controller-manager $KUBE_CTLMGR_OPTS
+
+First start
 
     [vagrant@localhost ~]$ sudo systemctl daemon-reload
 
-    [vagrant@localhost ~]$ sudo systemctl restart kube-controller-manager
+    [vagrant@localhost ~]$ sudo systemctl start kube-controller-manager.service
+
+Validation
+
+    [vagrant@localhost ~]$ sudo systemctl -l status kube-controller-manager.service
+    鈼▒ kube-controller-manager.service - Kubernetes controller manager
+       Loaded: loaded (/etc/systemd/system/kube-controller-manager.service; enabled; vendor preset: disabled)
+       Active: active (running) since Sat 2016-11-12 16:15:45 UTC; 9s ago
+         Docs: https://github.com/kubernetes/kubernetes
+     Main PID: 22499 (kube-controller)
+       CGroup: /system.slice/kube-controller-manager.service
+               鈹斺攢22499 /opt/kubernetes/server/bin/kube-controller-manager --address=10.64.33.81 --cluster-cidr=10.120.0.0/14 --cluster-name=kubernetes --enable-garbage-collector=false --kubeconfig=/srv/kubernetes/kubeconfig --master=https://10.64.33.81:6443 --port=10252 --root-ca-file=/srv/kubernetes/ca.crt --service-account-private-key-file=/srv/kubernetes/server.key --service-cluster-ip-range=10.123.240.0/20 --v=2
+
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: I1112 16:15:45.722320   22499 plugins.go:340] Loaded volume plugin "kubernetes.io/aws-ebs"
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: I1112 16:15:45.722334   22499 plugins.go:340] Loaded volume plugin "kubernetes.io/gce-pd"
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: I1112 16:15:45.722340   22499 plugins.go:340] Loaded volume plugin "kubernetes.io/cinder"
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: I1112 16:15:45.722346   22499 plugins.go:340] Loaded volume plugin "kubernetes.io/vsphere-volume"
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: E1112 16:15:45.723734   22499 util.go:45] Metric for serviceaccount_controller already registered
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: I1112 16:15:45.724525   22499 attach_detach_controller.go:191] Starting Attach Detach Controller
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: W1112 16:15:45.725101   22499 request.go:347] Field selector: v1 - serviceaccounts - metadata.name - default: need to check if this is versioned correctly.
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: I1112 16:15:45.730257   22499 endpoints_controller.go:322] Waiting for pods controller to sync, requeuing service default/kubernetes
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: W1112 16:15:45.799771   22499 request.go:347] Field selector: v1 - serviceaccounts - metadata.name - default: need to check if this is versioned correctly.
+    Nov 12 16:15:45 localhost.localdomain kube-controller-manager[22499]: I1112 16:15:45.848602   22499 endpoints_controller.go:322] Waiting for pods controller to sync, requeuing service default/kubernetes
+    [vagrant@localhost ~]$
+
+    [vagrant@localhost ~]$ sudo journalctl --no-pager --no-tail -u kube-controller-manager.service
+
+    [vagrant@localhost ~]$ sudo tail -100 /var/log/messages
+
+Investigate logs
+
+    E1112 03:26:22.687235   11466 controllermanager.go:253] Failed to start service controller: ServiceController should not be run without a cloudprovider.
+
+    E1112 03:26:22.690562   11466 util.go:45] Metric for replenishment_controller already registered
 
 * The kube-scheduler
 
-Env and service file
+Service file
 
-[vagrant@localhost ~]$ cat kubernetes/centos/kube-scheduler.service
-[Unit]
-Description=Kubernetes scheduler
-Documentation=https://github.com/kubernetes/kubernetes
-# After=
-# Requires=
-# Wants=
-# Conflicts=
+    [vagrant@localhost ~]$ vi kubernetes/centos/systemd/system/kube-scheduler.service
+    [Unit]
+    Description=Kubernetes scheduler
+    Documentation=https://github.com/kubernetes/kubernetes
+    # After=
+    # Requires=
+    # Wants=
+    # Conflicts=openshift-master.service
 
-[Service]
-Type=notify
-User=root
-WorkingDirectory=/opt/kubernetes
+    [Service]
+    # Type=notify
+    # NotifyAccess=main
+    Type=simple
+    User=root
 
-Environment=KUBE_SCHDULER_VERSION=1.3.10
-Environment=HOSTNAME_OVERRIDE=10.64.33.81
+    Environment=KUBE_BUILD_VERSION=1.3.10
+    EnvironmentFile=/etc/sysconfig/kube-scheduler
+    WorkingDirectory=/opt/kubernetes
 
-ExecStart=/opt/kubernetes/$KUBE_SCHDULER_VERSION/kube-scheduler \
-  --address=0.0.0.0 \
-  --algorithm-provider=DefaultProvider \
-  --kubeconfig="" \
-  --master=https://10.64.33.81 \
-  --policy-config-file="" \
-  --port=10251 \
-  --scheduler-name=default-scheduler \
-  --v=2
+    ExecStart=/opt/kubernetes/server/bin/kube-scheduler $KUBE_SCHEDULER_OPTS
+    # ExecStart=/bin/bash -c "/opt/kubernetes/${KUBERNETES_BUILD_VERSION}/centos/bin/kube-scheduler ${KUBE_SCHEDULER_OPTS}"
 
-Restart=On-Failure
+    # Restart=always
+    Restart=on-failure
 
-[Install]
-WantBy=multi-user.target
+    [Install]
+    WantedBy=multi-user.target
 
+Opts file
 
-[vagrant@localhost ~]$ cat kubernetes/centos/kube-proxy.service
-[Unit]
-Description=Kubernetes proxy networking
-Documentation=https://github.com/kubernetes/kubernetes
-# After=
-# Requires=
-# Wants=
-# Conflicts=
+    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/conf/kube-scheduler
+    # KUBE_SCHEDULER_VERSION=1.3.10
 
-[Service]
-Type=notify
-User=root
-WorkingDirectory=/opt/kubernetes
+    # ADDRESS_LISTEN=10.64.33.81
+    # MASTER_ADDRESS=https://10.64.33.81:6443
 
-Environment=KUBE_PROXY_VERSION=1.3.10
-Environment=HOSTNAME_OVERRIDE=10.64.33.81
+    # --cloud-config="": The path to the cloud provider configuration file
+    # --cloud-provider="": The provider for cloud services
 
-ExecStart=/opt/kubernetes/$KUBE_PROXY_VERSION/kube-proxy \
-  --bind-address=0.0.0.0 \
-  --cluster-cidr="" \
-  --hostname-override=$HOSTNAME_OVERRIDE \
-  --kubeconfig="" \
-  --master=https://10.64.33.81 \
-  --v=2
+    # --service-cluster-ip-range=<nil>: A CIDR notation IP range
+    # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
+    # CLUSTER_CIDR=10.120.0.0/14
+    # SERVICE_CIDR=10.123.240.0/20
+    # CLUSTER_MASTER=10.123.240.1
+    # CLUSTER_DNS=10.123.240.10
 
-Restart=On-Failure
+    KUBE_SCHEDULER_OPTS="--address=10.64.33.81 \
+      --algorithm-provider=DefaultProvider \
+      --kubeconfig=/srv/kubernetes/kubeconfig \
+      --master=https://10.64.33.81:6443 \
+      --port=10251 \
+      --scheduler-name=default-scheduler \
+      --v=2"
 
-[Install]
-WantBy=multi-user.target
+Manually install
 
+    [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/conf/kube-scheduler /etc/systemd/
 
-[vagrant@localhost ~]$ cat kubernetes/centos/kubelet.service
-[Unit]
-Description=Kubernetes daemon - kubelet
-Documentation=https://github.com/kubernetes/kubernetes
-After=docker.service flanneld.service
-Requires=network.target
-# Wants=
-# Conflicts=openshift-node.service
+    [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/system/kube-scheduler.service /etc/systemd/system
 
-[Service]
-Type=notify
-User=root
-WorkingDirectory=/var/lib/kubelet
+    [vagrant@localhost ~]$ sudo systemctl enable kube-scheduler
+    Created symlink from /etc/systemd/system/multi-user.target.wants/kube-scheduler.service to /etc/systemd/system/kube-scheduler.service.
 
-Environment=KUBELET_VERSION=1.3.10
-Environment=HOSTNAME_OVERRIDE=10.64.33.81
+Experimental run
 
-ExecStartPre=/usr/bin/mkdir -p /opt/kubernetes/manifests
-ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+    [vagrant@localhost ~]$ KUBE_SCHEDULER_OPTS="--address=0.0.0.0 \
+    >       --algorithm-provider=DefaultProvider \
+    >       --kubeconfig=/srv/kubernetes/kubeconfig \
+    >       --master=https://10.64.33.81:6443 \
+    >       --port=10251 \
+    >       --scheduler-name=default-scheduler \
+    >       --v=2"; sudo /opt/kubernetes/server/bin/kube-scheduler $KUBE_SCHEDULER_OPTS
 
-ExecStart=/opt/kubernetes/${KUBELET_VERSION}/kubelet \
-  --address=0.0.0.0 --allow-privileged=true \
-  --api-servers=https://${HOSTNAME_OVERRIDE} \
-  --cert-dir=/srv/kubernetes \
-  --cloud-provider="" \
-  --cluster_dns=172.30.0.10 \
-  --cluster_domain=cluster.local \
-  --config=/opt/kubernetes/manifests \
-  --network-plugin=cni \
-  --hostname_override=${HOSTNAME_OVERRIDE} \
-  --kubeconfig=/opt/kubernetes/kubeconfig \
-  --master_service_namespace=default \
-  --node_ip=${HOSTNAME_OVERRIDE} \
-  --pod_infra_container_image=gcr.io/google_containers/pause-amd64:3.0 \
-  --port=10250 \
-  --v=2
+First start
 
-Restart=always
-RestartSec=10
-KillMode=process
+    [vagrant@localhost ~]$ sudo systemctl daemon-reload
 
-[Install]
-WantedBy=multi-user.target
+    [vagrant@localhost ~]$ sudo systemctl start kube-scheduler.service
 
+Validation
 
-* Run as PODs
+    [vagrant@localhost ~]$ sudo systemctl -l status kube-scheduler.service
+    鈼▒ kube-scheduler.service - Kubernetes scheduler
+       Loaded: loaded (/etc/systemd/system/kube-scheduler.service; enabled; vendor preset: disabled)
+       Active: active (running) since Sat 2016-11-12 16:34:52 UTC; 9s ago
+         Docs: https://github.com/kubernetes/kubernetes
+     Main PID: 23697 (kube-scheduler)
+       CGroup: /system.slice/kube-scheduler.service
+               鈹斺攢23697 /opt/kubernetes/server/bin/kube-scheduler --address=10.64.33.81 --algorithm-provider=DefaultProvider --kubeconfig=/srv/kubernetes/kubeconfig --master=https://10.64.33.81:6443 --port=10251 --scheduler-name=default-scheduler --v=2
+
+    Nov 12 16:34:52 localhost.localdomain systemd[1]: Started Kubernetes scheduler.
+    Nov 12 16:34:52 localhost.localdomain systemd[1]: Starting Kubernetes scheduler...
+    Nov 12 16:34:52 localhost.localdomain kube-scheduler[23697]: I1112 16:34:52.405887   23697 factory.go:255] Creating scheduler from algorithm provider 'DefaultProvider'
+    Nov 12 16:34:52 localhost.localdomain kube-scheduler[23697]: I1112 16:34:52.405941   23697 factory.go:301] creating scheduler with fit predicates 'map[NoVolumeZoneConflict:{} MaxEBSVolumeCount:{} MaxGCEPDVolumeCount:{} GeneralPredicates:{} PodToleratesNodeTaints:{} CheckNodeMemoryPressure:{} NoDiskConflict:{}]' and priority functions 'map[SelectorSpreadPriority:{} NodeAffinityPriority:{} TaintTolerationPriority:{} LeastRequestedPriority:{} BalancedResourceAllocation:{}]
+
+    [vagrant@localhost ~]$ sudo journalctl --follow --no-pager --pager-end --no-tail -u kube-scheduler.service
+
+    [vagrant@localhost ~]$ sudo cat /var/log/messages | grep kube-scheduler
+
+* The kubelet
+
+Service file
+
+    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/system/kubelet.service
+    [Unit]
+    Description=Kubernetes container mgmt daemon - kubelet
+    Documentation=https://github.com/kubernetes/kubernetes
+    After=docker.service
+    Requires=docker.service
+    # Wants=
+    Conflicts=openshift-node.service
+
+    [Service]
+    # Type=notify
+    # NotifyAccess=all
+    Type=simple
+    User=root
+
+    Environment=KUBERNETES_BUILD_VERSION=1.3.10
+    EnvironmentFile=/etc/sysconfig/kubelet
+    WorkingDirectory=/opt/kubernetes
+
+    ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
+    ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+
+    ExecStart=/opt/kubernetes/server/bin/kubelet $KUBELET_OPTS
+    # ExecStart=/bin/bash -c "/opt/kubernetes/${KUBERNETES_BUILD_VERSION}/centos/bin/kubelet ${KUBELET_OPTS}"
+
+    # Restart=always
+    Restart=on-failure
+    RestartSec=10
+    KillMode=process
+
+    [Install]
+    WantedBy=multi-user.target
+
+Opts file
+
+    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/conf/kubelet
+    # KUBELET_VERSION=1.3.10
+
+    # --api-servers=[]: Comma separated list of Kubernetes API servers (ip:port).
+    # API_SERVERS=https://10.64.33.81:6443
+
+    # --hostname-override="": As identification instad of the actual hostname
+    # HOSTNAME_OVERRIDE=10.64.33.81
+
+    # --cert-dir="/var/run/kubernetes"
+    # CERT_DIR=/srv/kubernetes
+
+    # CONFIG_PATH=/etc/kubernetes/manifests
+
+    # --kubeconfig="/var/lib/kubelet/kubeconfig": Path to a kubeconfig file
+    # KUBECONFIG_PATH=/srv/kubernetes/kubeconfig
+
+    # --master-service-namespace="default": The master services should be injected into pods
+
+    # --service-cluster-ip-range=<nil>: A CIDR notation IP range
+    # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
+    # CLUSTER_CIDR=10.120.0.0/14
+    # SERVICE_CIDR=10.123.240.0/20
+    # CLUSTER_MASTER=10.123.240.1
+    # CLUSTER_DNS=10.123.240.10
+
+    KUBELET_OPTS="--address=10.64.33.81 \
+      --allow-privileged=true \
+      --api-servers=https://10.64.33.81:6443 \
+      --cadvisor-port=4194 \
+      --cert-dir=/srv/kubernetes \
+      --cluster-dns=10.123.240.10 \
+      --cluster-domain=cluster.local \
+      --config=/etc/kubernetes/manifests \
+      --configure-cbr0=false \
+      --container-runtime=docker \
+      --docker=unix:///var/run/docker.sock \
+      --healthz-bind-address=127.0.0.1 \
+      --healthz-port=10248 \
+      --hostname-override=10.64.33.81 \
+      --kubeconfig=/srv/kubernetes/kubeconfig \
+      --master-service-namespace=default \
+      --max-open-files=1000000 \
+      --max-pods=0 \
+      --node-ip=10.64.33.81 \
+      --non-masquerade-cidr=10.0.0.0/8 \
+      --pod-infra-container-image=gcr.io/google_containers/pause-amd64:3.0 \
+      --pods-per-core=0 \
+      --port=10250 \
+      --read-only-port=10255 \
+      --root-dir=/var/lib/kubelet \
+      --tls-cert-file=/srv/kubernetes/server.cert \
+      --tls-private-key-file=/srv/kubernetes/server.key \
+      --v=2"
+
+Manually install
+
+    [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/conf/kubelet /etc/sysconfig/
+
+    [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/system/kubelet.service /etc/systemd/system
+
+    [vagrant@localhost ~]$ sudo systemctl enable kubelet.service
+    Created symlink from /etc/systemd/system/multi-user.target.wants/kubelet.service to /etc/systemd/system/kubelet.service.
+
+Experimental run
+
+    [vagrant@localhost ~]$ KUBELET_OPTS="--address=0.0.0.0 \
+    >       --allow-privileged=true \
+    >       --api-servers=https://10.64.33.81:6443 \
+    >       --cadvisor-port=4194 \
+    >       --cert-dir=/srv/kubernetes \
+    >       --cluster-dns=10.123.240.10 \
+    >       --cluster-domain=cluster.local \
+    >       --config=/opt/kubernetes/manifests \
+    >       --configure-cbr0=false \
+    >       --container-runtime=docker \
+    >       --docker=unix:///var/run/docker.sock \
+    >       --experimental-nvidia-gpus=0 \
+    >       --healthz-bind-address=127.0.0.1 \
+    >       --healthz-port=10248 \
+    >       --hostname-override=10.64.33.81 \
+    >       --kubeconfig=/srv/kubernetes/kubeconfig \
+    >       --master-service-namespace=default \
+    >       --max-open-files=1000000 \
+    >       --max-pods=110 \
+    >       --node-ip=10.64.33.81 \
+    >       --non-masquerade-cidr=10.0.0.0/8 \
+    >       --pod-infra-container-image=gcr.io/google_containers/pause-amd64:3.0 \
+    >       --pods-per-core=0 \
+    >       --port=10250 \
+    >       --root-dir=/var/lib/kubelet \
+    >       --tls-cert-file=/srv/kubernetes/server.cert \
+    >       --tls-private-key-file=/srv/kubernetes/server.key \
+    >       --v=2"; sudo /opt/kubernetes/server/bin/kubelet $KUBELET_OPTS
+
+First start
+
+    [vagrant@localhost ~]$ sudo systemctl daemon-reload                             
+
+    [vagrant@localhost ~]$ sudo systemctl start kubelet.service
+
+Validation
+
+    [vagrant@localhost ~]$ sudo systemctl -l status kubelet.service
+    鈼▒ kubelet.service - Kubernetes container mgmt daemon - kubelet
+       Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; vendor preset: disabled)
+       Active: active (running) since Sat 2016-11-12 15:11:08 UTC; 40min ago
+         Docs: https://github.com/kubernetes/kubernetes
+     Main PID: 17657 (kubelet)
+       CGroup: /system.slice/kubelet.service
+               鈹溾攢17657 /opt/kubernetes/server/bin/kubelet --address=10.64.33.81 --allow-privileged=true --api-servers=https://10.64.33.81:6443 --cadvisor-port=4194 --cert-dir=/srv/kubernetes --cluster-dns=10.123.240.10 --cluster-domain=cluster.local --config=/etc/kubernetes/manifests --configure-cbr0=false --container-runtime=docker --docker=unix:///var/run/docker.sock --healthz-bind-address=127.0.0.1 --healthz-port=10248 --hostname-override=10.64.33.81 --kubeconfig=/srv/kubernetes/kubeconfig --master-service-namespace=default --max-open-files=1000000 --max-pods=0 --node-ip=10.64.33.81 --non-masquerade-cidr=10.0.0.0/8 --pod-infra-container-image=gcr.io/google_containers/pause-amd64:3.0 --pods-per-core=0 --port=10250 --read-only-port=10255 --root-dir=/var/lib/kubelet --tls-cert-file=/srv/kubernetes/server.cert --tls-private-key-file=/srv/kubernetes/server.key --v=2
+
+    Nov 12 15:46:09 localhost.localdomain kubelet[17657]: W1112 15:46:09.340116   17657 container_manager_linux.go:589] CPUAccounting not enabled for pid: 1076
+    Nov 12 15:46:09 localhost.localdomain kubelet[17657]: W1112 15:46:09.340156   17657 container_manager_linux.go:592] MemoryAccounting not enabled for pid: 1076
+    Nov 12 15:46:09 localhost.localdomain kubelet[17657]: I1112 15:46:09.340171   17657 container_manager_linux.go:290] Discovered runtime cgroups name: /system.slice/docker.service
+    Nov 12 15:46:09 localhost.localdomain kubelet[17657]: W1112 15:46:09.340318   17657 container_manager_linux.go:589] CPUAccounting not enabled for pid: 17657
+    Nov 12 15:46:09 localhost.localdomain kubelet[17657]: W1112 15:46:09.340334   17657 container_manager_linux.go:592] MemoryAccounting not enabled for pid: 17657
+    Nov 12 15:51:09 localhost.localdomain kubelet[17657]: W1112 15:51:09.347243   17657 container_manager_linux.go:589] CPUAccounting not enabled for pid: 1076
+    Nov 12 15:51:09 localhost.localdomain kubelet[17657]: W1112 15:51:09.347277   17657 container_manager_linux.go:592] MemoryAccounting not enabled for pid: 1076
+    Nov 12 15:51:09 localhost.localdomain kubelet[17657]: I1112 15:51:09.347292   17657 container_manager_linux.go:290] Discovered runtime cgroups name: /system.slice/docker.service
+    Nov 12 15:51:09 localhost.localdomain kubelet[17657]: W1112 15:51:09.354968   17657 container_manager_linux.go:589] CPUAccounting not enabled for pid: 17657
+    Nov 12 15:51:09 localhost.localdomain kubelet[17657]: W1112 15:51:09.355003   17657 container_manager_linux.go:592] MemoryAccounting not enabled for pid: 17657
+
+    [vagrant@localhost ~]$ sudo journalctl --follow --no-tail --no-pager --pager-end -u kubelet.service
+
+    [vagrant@localhost ~]$ sudo tail -100 /var/log/messages | grep kubelet
+
+    [vagrant@localhost ~]$ sudo journalctl -k -f
+
+Using kubectl
+
+    [vagrant@localhost ~]$ kubectl get nodes
+    NAME          STATUS    AGE
+    10.64.33.81   Ready     26m
+
+    [vagrant@localhost ~]$ kubectl get nodes/10.64.33.81 -o yaml
+    apiVersion: v1
+    kind: Node
+    metadata:
+      annotations:
+        volumes.kubernetes.io/controller-managed-attach-detach: "true"
+      creationTimestamp: 2016-11-11T22:58:41Z
+      labels:
+        beta.kubernetes.io/arch: amd64
+        beta.kubernetes.io/os: linux
+        kubernetes.io/hostname: 10.64.33.81
+      name: 10.64.33.81
+      resourceVersion: "103"
+      selfLink: /api/v1/nodes/10.64.33.81
+      uid: 63c86df9-a862-11e6-8d5b-5254009fbdfd
+    spec:
+      externalID: 10.64.33.81
+    status:
+      addresses:
+      - address: 10.64.33.81
+        type: LegacyHostIP
+      - address: 10.64.33.81
+        type: InternalIP
+      allocatable:
+        alpha.kubernetes.io/nvidia-gpu: "0"
+        cpu: "1"
+        memory: 2916372Ki
+        pods: "110"
+      capacity:
+        alpha.kubernetes.io/nvidia-gpu: "0"
+        cpu: "1"
+        memory: 2916372Ki
+        pods: "110"
+      conditions:
+      - lastHeartbeatTime: 2016-11-11T23:25:59Z
+        lastTransitionTime: 2016-11-11T23:22:08Z
+        message: kubelet has sufficient disk space available
+        reason: KubeletHasSufficientDisk
+        status: "False"
+        type: OutOfDisk
+      - lastHeartbeatTime: 2016-11-11T23:25:59Z
+        lastTransitionTime: 2016-11-11T22:58:41Z
+        message: kubelet has sufficient memory available
+        reason: KubeletHasSufficientMemory
+        status: "False"
+        type: MemoryPressure
+      - lastHeartbeatTime: 2016-11-11T23:25:59Z
+        lastTransitionTime: 2016-11-11T23:22:08Z
+        message: kubelet is posting ready status
+        reason: KubeletReady
+        status: "True"
+        type: Ready
+      daemonEndpoints:
+        kubeletEndpoint:
+          Port: 10250
+      nodeInfo:
+        architecture: amd64
+        bootID: b14335fa-f746-46c7-9517-44f1f9353cc5
+        containerRuntimeVersion: docker://1.10.3
+        kernelVersion: 3.10.0-327.36.1.el7.x86_64
+        kubeProxyVersion: v1.3.10
+        kubeletVersion: v1.3.10
+        machineID: c1bde9cb97f44f9194d26b125a13dd44
+        operatingSystem: linux
+        osImage: CentOS Linux 7 (Core)
+        systemUUID: C1BDE9CB-97F4-4F91-94D2-6B125A13DD44
+
+Investigate logs
+
+    E1112 03:13:18.667969    9980 kubelet.go:954] Image garbage collection failed: unable to find data for container /
+
+    E1111 22:58:41.544101    4389 factory.go:291] devicemapper filesystem stats will not be reported: RHEL/Centos 7.x kernel version 3.10.0-366 or later is required to use thin_ls - you have "3.10.0-327.36.1.el7.x86_64"
+
+* The kube-proxy
+
+Service file
+
+    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/system/kube-proxy.service
+    [Unit]
+    Description=Kubernetes proxy networking
+    Documentation=https://github.com/kubernetes/kubernetes
+    # After=
+    # Requires=
+    # Wants=
+    # Conflicts=openshift-node.service
+
+    [Service]
+    # Type=notify
+    # NotifyAccess=none
+    Type=simple
+    User=root
+
+    Environment=KUBERNETES_RELEASE_VERSION=1.3.10
+    EnvironmentFile=/etc/sysconfig/kube-proxy
+    WorkingDirectory=/opt/kubernetes
+
+    ExecStart=/opt/kubernetes/server/bin/kube-proxy $KUBE_PROXY_OPTS
+    # ExecStart=/bin/bash -c "/opt/kubernetes/${KUBERNETES_RELEASE_VERSION}/centos/bin/kube-proxy ${KUBE_PROXY_OPTS}"
+
+    # Restart=always
+    Restart=on-failure
+
+    [Install]
+    WantedBy=multi-user.target
+
+Opts file
+
+    [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/conf/kube-proxy
+    # KUBE_PROXY_VERSION=1.3.10
+
+    # BIND_ADDRESS=10.64.33.81
+    # HOSTNAME_OVERRIDE=10.64.33.81
+
+    # --iptables-masquerade-bit=14: If using the pure iptables proxy, the bit of the fwmark space to mark packets requiring SNAT with. Must be within [0, 31]
+
+    # KUBECONFIG_PATH=/srv/kubernetes/kubeconfig
+    # MASTER_ADDRESS=https://10.64.33.81:6443
+
+    # --service-cluster-ip-range=<nil>: A CIDR notation IP range
+    # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
+    # CLUSTER_CIDR=10.120.0.0/14
+    # SERVICE_CIDR=10.123.240.0/20
+    # CLUSTER_MASTER=10.123.240.1
+    # CLUSTER_DNS=10.123.240.10
+
+    KUBE_PROXY_OPTS="--bind-address=10.64.33.81 \
+      --cluster-cidr=10.120.0.0/14 \
+      --healthz-bind-address=127.0.0.1 \
+      --healthz-port=10249 \
+      --hostname-override=10.64.33.81 \
+      --iptables-masquerade-bit=14 \
+      --kubeconfig=/srv/kubernetes/kubeconfig \
+      --master=https://10.64.33.81:6443 \
+      --v=2"
+
+Manually Install
+
+    [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/conf/kube-proxy /etc/sysconfig/
+
+    [vagrant@localhost ~]$ sudo cp kubernetes/1.3.10/centos/systemd/system/kube-proxy.service /etc/systemd/system
+
+    [vagrant@localhost ~]$ sudo systemctl enable kube-proxy.service
+    Created symlink from /etc/systemd/system/multi-user.target.wants/kube-proxy.service to /etc/systemd/system/kube-proxy.service.
+
+Experimental Run
+
+    [vagrant@localhost ~]$ KUBE_PROXY_OPTS="--bind-address=0.0.0.0 \
+    >       --cluster-cidr=10.120.0.0/14 \
+    >       --healthz-bind-address=127.0.0.1 \
+    >       --healthz-port=10249 \
+    >       --hostname-override=10.64.33.81 \
+    >       --iptables-masquerade-bit=14 \
+    >       --kubeconfig=/srv/kubernetes/kubeconfig \
+    >       --master=https://10.64.33.81:6443 \
+    >       --v=2"; sudo /opt/kubernetes/server/bin/kube-proxy $KUBE_PROXY_OPTS
+
+First start
+
+    [vagrant@localhost ~]$ sudo systemctl daemon-reload
+
+    [vagrant@localhost ~]$ sudo systemctl start kube-proxy.service
+
+Validation
+
+    [vagrant@localhost ~]$ sudo systemctl -l status kube-proxy.service
+    鈼▒ kube-proxy.service - Kubernetes proxy networking
+       Loaded: loaded (/etc/systemd/system/kube-proxy.service; enabled; vendor preset: disabled)
+       Active: active (running) since Sat 2016-11-12 15:47:53 UTC; 8min ago
+         Docs: https://github.com/kubernetes/kubernetes
+     Main PID: 20694 (kube-proxy)
+       CGroup: /system.slice/kube-proxy.service
+               鈹斺攢20694 /opt/kubernetes/server/bin/kube-proxy --bind-address=10.64.33.81 --cluster-cidr=10.120.0.0/14 --healthz-bind-address=127.0.0.1 --healthz-port=10249 --hostname-override=10.64.33.81 --iptables-masquerade-bit=14 --kubeconfig=/srv/kubernetes/kubeconfig --master=https://10.64.33.81:6443 --v=2
+
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.916429   20694 server.go:155] setting OOM scores is unsupported in this build
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.948369   20694 server.go:202] Using iptables Proxier.
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.949826   20694 proxier.go:216] missing br-netfilter module or unset br-nf-call-iptables; proxy may not work as intended
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.949855   20694 server.go:214] Tearing down userspace rules.
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.959059   20694 conntrack.go:40] Setting nf_conntrack_max to 65536
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.959696   20694 conntrack.go:57] Setting conntrack hashsize to 16384
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.959785   20694 conntrack.go:62] Setting nf_conntrack_tcp_timeout_established to 86400
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.961241   20694 proxier.go:440] Adding new service "default/kubernetes:https" at 10.123.240.1:443/TCP
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.961333   20694 proxier.go:674] Not syncing iptables until Services and Endpoints have been received from master
+    Nov 12 15:47:53 localhost.localdomain kube-proxy[20694]: I1112 15:47:53.977742   20694 proxier.go:516] Setting endpoints for "default/kubernetes:https" to [10.64.33.81:6443]
+
+    [vagrant@localhost ~]$ sudo journalctl --follow --no-tail --no-pager --pager-end -u kube-proxy.service
+
+Using kubectl
+
+    [vagrant@localhost ~]$ kubectl get endpoints,services
+    NAME         ENDPOINTS          AGE
+    kubernetes   10.64.33.81:6443   1d
+    NAME         CLUSTER-IP         EXTERNAL-IP   PORT(S)   AGE
+    kubernetes   10.123.240.1       <none>        443/TCP   1d
+
+### Run kub-apiserver, kube-controller-manager, kube-scheduler, kube-proxy as PODs
 
 Reference
 
     https://github.com/coreos/coreos-kubernetes/blob/v0.4.0/multi-node/generic/controller-install.sh
+
+Pod image
+----------
+
+Save local pulled
+
+Load from image archive
+
+A *gofileserver* HTTP archives
+
+    tangf@DESKTOP-H68OQDV /cygdrive/g/2015-12-19-repository/99-mirror
+    $ gofileserver.exe
+    Listening at  :48080
+
+    [vagrant@localhost ~]$ curl -L http://192.168.1.100:48080/
+    <pre>
+    <a href="centos/">centos/</a>
+    <a href="gcr.io%252Fgoogle_containers/">gcr.io%2Fgoogle_containers/</a>
+    </pre>
+
+    [vagrant@localhost ~]$ wget -r http://192.168.1.100:48080/gcr.io%252Fgoogle_containers/  
+    --2016-11-12 18:55:01--  http://192.168.1.100:48080/gcr.io%252Fgoogle_containers/gcr.io%252Fgoogle_containers%252Fkubernetes-dashboard-amd64%253Av1.0.1.tar
+    Reusing existing connection to 192.168.1.100:48080.
+    HTTP request sent, awaiting response... 200 OK
+    Length: 44133888 (42M) [application/x-tar]
+    Saving to: 鈥▒192.168.1.100:48080/gcr.io%2Fgoogle_containers/gcr.io%2Fgoogle_containers%2Fkubernetes-dashboard-amd64%3Av1.0.1.tar鈥▒
+
+    30% [==========>                            ] 13,531,220  33.2KB/s  eta 10m 40s
+
+
+
+Kubernetes addons
+--------------------
+
+* Start kube-dns
+
+
+Install worker node
+--------------------
+
+Same as preview steps, only validate to:
+
+* copy `CA and certs`
+
+* install `kubelet`
+
+* install `kube-proxy`
+
+* load `POD image`
+
+* Validation
+
+After `docker` and `flanneld` installed
+
+Copy `CA and certs`
+
+    [tangfx@localhost ~]$ sudo cp .pki/kubernetes/* /etc/kubernetes/cacerts
+
+Install `kubelet`
+
+    [tangfx@localhost ~]$ vi kubernetes/1.3.1/fedora23/systemd/system/kubelet.service
+    [Unit]
+    Description=Kubernetes container mgmt daemon - kubelet
+    Documentation=https://github.com/kubernetes/kubernetes
+    After=docker.service
+    Requires=docker.service
+    # Wants=
+    Conflicts=openshift-node.service
+
+    [Service]
+    Type=simple
+    # Type=notify
+    # NotifyAccess=all
+    User=root
+
+    WorkingDirectory=/opt/kubernetes
+
+    Environment=KUBERNETES_RELEASE_VERSION=1.3.1
+    EnvironmentFile=/etc/sysconfig/kubelet
+
+    ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
+    ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+
+    # ExecStart=/opt/kubernetes/server/bin/kubelet $KUBELET_OPTS
+    ExecStart=/bin/bash -c "/opt/kubernetes/${KUBERNETES_RELEASE_VERSION}/fedora23/bin/kubelet ${KUBELET_OPTS}"
+
+    # Restart=always
+    Restart=on-failure
+    RestartSec=10
+    KillMode=process
+
+    [Install]
+    WantedBy=multi-user.target
+
+    [tangfx@localhost ~]$ vi kubernetes/1.3.1/fedora23/systemd/conf/kubelet
+    # KUBELET_VERSION=1.3.10
+
+    # --api-servers=[]: Comma separated list of Kubernetes API servers (ip:port).
+    # API_SERVERS=https://10.64.33.81:6443
+
+    # --cert-dir="/var/run/kubernetes"
+    # CERT_DIR=/home/tangfx/.pki/kubernetes
+
+    # --hostname-override="": As identification instad of the actual hostname
+    # HOSTNAME_OVERRIDE=10.64.33.90
+
+    # --kubeconfig="/var/lib/kubelet/kubeconfig": Path to a kubeconfig file
+    # KUBECONFIG_PATH=/home/tangfx/.pki/kubernetes/kubeconfig
+
+    # --master-service-namespace="default": The master services should be injected into pods
+
+    # --service-cluster-ip-range=<nil>: A CIDR notation IP range
+    # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
+    # SERVICE_CIDR=10.123.240.0/20
+    # SERVICE_MASTER=10.123.240.1
+    # CLUSTER_DNS=10.123.240.10
+
+    # TLS_SERVER_CERT=/home/tangfx/.pki/kubernetes/server.cert
+    # TLS_SERVER_KEY=/home/tangfx/.pki/kubernetes/server.key
+
+    #KUBELET_OPTS="--address=10.64.33.90 \
+    #  --allow-privileged=true \
+    #  --api-servers=https://10.64.33.81:6443 \
+    #  --cadvisor-port=4194 \
+    #  --cert-dir=/home/tangfx/.pki/kubernetes \
+    #  --cluster-dns=10.123.240.10 \
+    #  --cluster-domain=cluster.local \
+    #  --config=/etc/kubernetes/manifests \
+    #  --configure-cbr0=false \
+    #  --container-runtime=docker \
+    #  --docker=unix:///var/run/docker.sock \
+    #  --healthz-bind-address=127.0.0.1 \
+    #  --healthz-port=10248 \
+    #  --hostname-override=10.64.33.90 \
+    #  --kubeconfig=/home/tangfx/.pki/kubernetes/kubeconfig \
+    #  --master-service-namespace=default \
+    #  --max-open-files=1000000 \
+    #  --max-pods=110 \
+    #  --node-ip=10.64.33.90 \
+    #  --non-masquerade-cidr=10.0.0.0/8 \
+    #  --pod-infra-container-image=gcr.io/google_containers/pause-amd64:3.0 \
+    #  --pods-per-core=0 \
+    #  --port=10250 \
+    #  --read-only-port=10255 \
+    #  --root-dir=/var/lib/kubelet \
+    #  --tls-cert-file=/home/tangfx/.pki/kubernetes/server.cert \
+    #  --tls-private-key-file=/home/tangfx/.pki/kubernetes/server.key \
+    #  --v=2"
+
+    KUBELET_OPTS="--address=10.64.33.90 \
+      --allow-privileged=false \
+      --api-servers=https://10.64.33.81:6443 \
+      --cluster-dns=10.123.240.10 \
+      --cluster-domain=cluster.local \
+      --config=/etc/kubernetes/manifests \
+      --hostname-override=10.64.33.90 \
+      --kubeconfig=/home/tangfx/.pki/kubernetes/kubeconfig \
+      --node-ip=10.64.33.90 \
+      --v=2"
+
+    [tangfx@localhost ~]$ sudo cp kubernetes/1.3.1/fedora23/systemd/system/kubelet.service /etc/systemd/system/
+
+    [tangfx@localhost ~]$ sudo cp kubernetes/1.3.1/fedora23/systemd/conf/kubelet /etc/sysconfig/
+
+    [tangfx@localhost ~]$ sudo systemctl enable kubelet.service
+
+    [tangfx@localhost ~]$ sudo systemctl daemon-reload
+
+    [tangfx@localhost ~]$ sudo systemctl start kubelet.service
+
+    [tangfx@localhost ~]$ sudo systemctl -l status kubelet.service                  
+    鈼▒ kubelet.service - Kubernetes container mgmt daemon - kubelet
+       Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; vendor preset: disabled)
+       Active: active (running) since Sat 2016-11-12 23:39:31 CST; 3h 52min ago
+         Docs: https://github.com/kubernetes/kubernetes
+      Process: 10194 ExecStartPre=/usr/bin/mkdir -p /var/log/containers (code=exited, status=0/SUCCESS)
+      Process: 10192 ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests (code=exited, status=0/SUCCESS)
+     Main PID: 10196 (kubelet)
+       CGroup: /system.slice/kubelet.service
+               鈹溾攢10196 /opt/kubernetes/1.3.1/fedora23/bin/kubelet --address=10.64.33.90 --allow-privileged=false --api-servers=https://10.64.33.81:6443 --cluster-dns=10.123.240.10 --cluster-domain=cluster.local --config=/etc/kubernetes/manifests --hostname-override=10.64.33.90 --kubeconfig=/home/tangfx/.pki/kubernetes/kubeconfig --node-ip=10.64.33.90 --v=2
+               鈹斺攢10215 journalctl -k -f
+
+    Nov 13 03:29:32 localhost.localdomain bash[10196]: W1113 03:29:32.995284   10196 container_manager_linux.go:573] CPUAccounting not enabled for pid: 10196
+    Nov 13 03:29:32 localhost.localdomain bash[10196]: W1113 03:29:32.995567   10196 container_manager_linux.go:576] MemoryAccounting not enabled for pid: 10196
+    Nov 13 03:29:40 localhost.localdomain bash[10196]: I1113 03:29:40.967632   10196 thin_pool_watcher.go:126] reserving metadata snapshot for thin-pool docker-253:0-67108972-pool
+    Nov 13 03:29:56 localhost.localdomain bash[10196]: I1113 03:29:56.082104   10196 thin_pool_watcher.go:126] reserving metadata snapshot for thin-pool docker-253:0-67108972-pool
+    Nov 13 03:30:11 localhost.localdomain bash[10196]: I1113 03:30:11.241585   10196 thin_pool_watcher.go:126] reserving metadata snapshot for thin-pool docker-253:0-67108972-pool
+    Nov 13 03:30:26 localhost.localdomain bash[10196]: I1113 03:30:26.333483   10196 thin_pool_watcher.go:126] reserving metadata snapshot for thin-pool docker-253:0-67108972-pool
+    Nov 13 03:30:41 localhost.localdomain bash[10196]: I1113 03:30:41.507199   10196 thin_pool_watcher.go:126] reserving metadata snapshot for thin-pool docker-253:0-67108972-pool
+    Nov 13 03:30:56 localhost.localdomain bash[10196]: I1113 03:30:56.594531   10196 thin_pool_watcher.go:126] reserving metadata snapshot for thin-pool docker-253:0-67108972-pool
+    Nov 13 03:31:11 localhost.localdomain bash[10196]: I1113 03:31:11.687486   10196 thin_pool_watcher.go:126] reserving metadata snapshot for thin-pool docker-253:0-67108972-pool
+    Nov 13 03:31:26 localhost.localdomain bash[10196]: I1113 03:31:26.816454   10196 thin_pool_watcher.go:126] reserving metadata snapshot for thin-pool docker-253:0-67108972-pool
+
+    [tangfx@localhost ~]$ sudo journalctl --no-tail --no-pager --pager-end --lines=10 --unit=kubelet.service
+
+Install `kube-proxy`
+
+    [tangfx@localhost ~]$ vi kubernetes/1.3.1/fedora23/systemd/system/kube-proxy.service
+    [Unit]
+    Description=Kubernetes proxy networking
+    Documentation=https://github.com/kubernetes/kubernetes
+    # After=
+    # Requires=
+    # Wants=
+    # Conflicts=openshift-node.service
+
+    [Service]
+    # Type=notify
+    # NotifyAccess=none
+    Type=simple
+    User=root
+
+    Environment=KUBERNETES_RELEASE_VERSION=1.3.1
+    EnvironmentFile=/etc/sysconfig/kube-proxy
+    WorkingDirectory=/opt/kubernetes
+
+    # ExecStart=/opt/kubernetes/server/bin/kube-proxy $KUBE_PROXY_OPTS
+    ExecStart=/bin/bash -c "/opt/kubernetes/${KUBERNETES_RELEASE_VERSION}/fedora23/bin/kube-proxy ${KUBE_PROXY_OPTS}"
+
+    # Restart=always
+    Restart=on-failure
+
+    [Install]
+    WantedBy=multi-user.target    
+
+    [tangfx@localhost ~]$ vi kubernetes/1.3.1/fedora23/systemd/conf/kube-proxy
+    # KUBE_PROXY_VERSION=1.3.10
+
+    # BIND_ADDRESS=10.64.33.90
+    # HOSTNAME_OVERRIDE=10.64.33.90
+
+    # --iptables-masquerade-bit=14: If using the pure iptables proxy, the bit of the fwmark space to mark packets requiring SNAT with. Must be within [0, 31]
+
+    # KUBECONFIG_PATH=/home/tangfx/.pki/kubernetes/kubeconfig
+
+    # MASTER_ADDRESS=https://10.64.33.81:6443
+
+    # --service-cluster-ip-range=<nil>: A CIDR notation IP range
+    # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
+    # CLUSTER_CIDR=10.120.0.0/14
+    # SERVICE_CIDR=10.123.240.0/20
+    # CLUSTER_MASTER=10.123.240.1
+    # SERVICE_DNS=10.123.240.10
+
+    KUBE_PROXY_OPTS="--bind-address=10.64.33.90 \
+      --cluster-cidr=10.120.0.0/14 \
+      --healthz-bind-address=127.0.0.1 \
+      --healthz-port=10249 \
+      --hostname-override=10.64.33.90 \
+      --iptables-masquerade-bit=14 \
+      --kubeconfig=/home/tangfx/.pki/kubernetes/kubeconfig \
+      --master=https://10.64.33.81:6443 \
+      --v=2"
+
+    [tangfx@localhost ~]$ sudo cp kubernetes/1.3.1/fedora23/systemd/system/kube-proxy.service /etc/systemd/system/
+
+    [tangfx@localhost ~]$ sudo cp kubernetes/1.3.1/fedora23/systemd/conf/kube-proxy /etc/sysconfig/
+
+    [tangfx@localhost ~]$ sudo systemctl enable kube-proxy.service
+
+    [tangfx@localhost ~]$ sudo systemctl daemon-reload
+
+    [tangfx@localhost ~]$ sudo systemctl start kube-proxy.service
+
+    [tangfx@localhost ~]$ sudo systemctl -l status kube-proxy.service
+    鈼▒ kube-proxy.service - Kubernetes proxy networking
+       Loaded: loaded (/etc/systemd/system/kube-proxy.service; enabled; vendor preset: disabled)
+       Active: active (running) since Sat 2016-11-12 23:39:58 CST; 3h 42min ago
+         Docs: https://github.com/kubernetes/kubernetes
+     Main PID: 10262 (kube-proxy)
+       CGroup: /system.slice/kube-proxy.service
+               鈹斺攢10262 /opt/kubernetes/1.3.1/fedora23/bin/kube-proxy --bind-address=10.64.33.90 --cluster-cidr=10.120.0.0/14 --healthz-bind-address=127.0.0.1 --healthz-port=10249 --hostname-override=10.64.33.90 --iptables-masquerade-bit=14 --kubeconfig=/home/tangfx/.pki/kubernetes/kubeconfig --master=https://10.64.33.81:6443 --v=2
+
+    Nov 12 23:39:58 localhost.localdomain bash[10262]: I1112 23:39:58.626897   10262 conntrack.go:36] Setting nf_conntrack_max to 262144
+    Nov 12 23:39:58 localhost.localdomain bash[10262]: I1112 23:39:58.627147   10262 conntrack.go:41] Setting conntrack hashsize to 65536
+    Nov 12 23:39:58 localhost.localdomain bash[10262]: I1112 23:39:58.627751   10262 conntrack.go:46] Setting nf_conntrack_tcp_timeout_established to 86400
+    Nov 12 23:39:58 localhost.localdomain bash[10262]: I1112 23:39:58.631191   10262 proxier.go:427] Adding new service "default/kubernetes:https" at 10.123.240.1:443/TCP
+    Nov 12 23:39:58 localhost.localdomain bash[10262]: I1112 23:39:58.632505   10262 proxier.go:647] Not syncing iptables until Services and Endpoints have been received from master
+    Nov 12 23:39:58 localhost.localdomain bash[10262]: I1112 23:39:58.641024   10262 proxier.go:502] Setting endpoints for "default/kubernetes:https" to [10.64.33.81:6443]
+
+    [tangfx@localhost ~]$ sudo journalctl --no-tail --no-pager --pager-end --lines=10 --unit=kube-proxy.service    
+
+Load `POD image`
+
+    [tangfx@localhost ~]$ curl http://192.168.1.100:48080
+    <pre>
+    <a href="centos/">centos/</a>
+    <a href="gcr.io%252Fgoogle_containers/">gcr.io%2Fgoogle_containers/</a>
+    </pre>
+
+    [tangfx@localhost ~]$ curl http://192.168.1.100:48080/gcr.io%252Fgoogle_containers/
+    <pre>
+    <a href="gcr.io%252Fgoogle_containers%252Fkubernetes-dashboard-amd64%253Av1.0.1.tar">gcr.io%2Fgoogle_containers%2Fkubernetes-dashboard-amd64%3Av1.0.1.tar</a>
+    <a href="gcr.io%252Fgoogle_containers%252Fkubernetes-dashboard-amd64%253Av1.1.1.tar">gcr.io%2Fgoogle_containers%2Fkubernetes-dashboard-amd64%3Av1.1.1.tar</a>
+    <a href="gcr.io%252Fgoogle_containers%252Fkubernetes-dashboard-amd64%253Av1.4.0.tar">gcr.io%2Fgoogle_containers%2Fkubernetes-dashboard-amd64%3Av1.4.0.tar</a>
+    <a href="gcr.io%252Fgoogle_containers%252Fkubernetes-dashboard-amd64%253Av1.4.2.tar">gcr.io%2Fgoogle_containers%2Fkubernetes-dashboard-amd64%3Av1.4.2.tar</a>
+    <a href="gcr.io%252Fgoogle_containers%252Fpause%253A0.8.0.tar">gcr.io%2Fgoogle_containers%2Fpause%3A0.8.0.tar</a>
+    <a href="gcr.io%252Fgoogle_containers%252Fpause%253A2.0.tar">gcr.io%2Fgoogle_containers%2Fpause%3A2.0.tar</a>
+    <a href="gcr.io%252Fgoogle_containers%252Fpause-amd64%253A3.0.tar">gcr.io%2Fgoogle_containers%2Fpause-amd64%3A3.0.tar</a>
+    </pre>
+
+    [tangfx@localhost ~]$ curl http://192.168.1.100:48080/gcr.io%252Fgoogle_containers/gcr.io%252Fgoogle_containers%252Fpause-amd64%253A3.0.tar -O
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100  745k  100  745k    0     0  34716      0  0:00:21  0:00:21 --:--:-- 54639
+
+    [tangfx@localhost ~]$ docker load -i gcr.io%252Fgoogle_containers%252Fpause-amd64%253A3.0.tar
+
+
+
+Validation
+
+    [tangfx@localhost ~]$ KUBECONFIG=.pki/kubernetes/kubeconfig kubectl get nodes
+    NAME          STATUS    AGE
+    10.64.33.81   Ready     20h
+    10.64.33.90   Ready     12h

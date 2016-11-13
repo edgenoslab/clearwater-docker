@@ -173,3 +173,37 @@ Experimental ops
 * Install docker
 
 参考[docker官方文档](https://docs.docker.com/engine/installation/linux/centos/)
+
+    [vagrant@localhost ~]$ sudo systemctl enable docker.service
+
+    [vagrant@localhost ~]$ sudo systemctl start docker.service
+
+Validation
+
+    [vagrant@localhost ~]$ sudo systemctl -l status docker.service
+    鈼▒ docker.service - Docker Application Container Engine
+       Loaded: loaded (/usr/lib/systemd/system/docker.service; enabled; vendor preset: disabled)
+      Drop-In: /usr/lib/systemd/system/docker.service.d
+               鈹斺攢flannel.conf
+       Active: active (running) since Sat 2016-11-12 22:43:09 UTC; 10s ago
+         Docs: http://docs.docker.com
+     Main PID: 13547 (docker-current)
+       CGroup: /system.slice/docker.service
+               鈹斺攢13547 /usr/bin/docker-current daemon --exec-opt native.cgroupdriver=systemd --selinux-enabled --log-driver=journald --bip=10.121.24.1/23 --ip-masq=true --mtu=1472
+
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.824941328Z" level=warning msg="devmapper: Base device already exists and has filesystem xfs on it. User specified filesystem  will be ignored."
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.847090355Z" level=info msg="[graphdriver] using prior storage driver \"devicemapper\""
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.849853203Z" level=info msg="Graph migration to content-addressability took 0.00 seconds"
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.856844053Z" level=info msg="Firewalld running: false"
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.953737295Z" level=info msg="Loading containers: start."
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.953787544Z" level=info msg="Loading containers: done."
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.953795950Z" level=info msg="Daemon has completed initialization"
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.953806548Z" level=info msg="Docker daemon" commit=cb079f6-unsupported execdriver=native-0.2 graphdriver=devicemapper version=1.10.3
+    Nov 12 22:43:09 localhost.localdomain docker-current[13547]: time="2016-11-12T22:43:09.957962358Z" level=info msg="API listen on /var/run/docker.sock"
+    Nov 12 22:43:09 localhost.localdomain systemd[1]: Started Docker Application Container Engine.
+
+    [vagrant@localhost ~]$ docker network ls
+    NETWORK ID          NAME                DRIVER
+    6946ae42963c        bridge              bridge
+    e1f79a5b1ddb        none                null
+    f6b9fe847c0a        host                host
