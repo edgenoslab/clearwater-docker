@@ -26,7 +26,7 @@ Tables of content
 
 >* Install kube-proxy server
 
-* Load POD image
+* POD image and container
 
 * Kubernetes addons
 
@@ -725,6 +725,25 @@ Validation
 
 * The kubelet
 
+User
+
+    [vagrant@localhost ~]$ sudo adduser --home-dir=/var/lib/kubelet --system kubelet
+
+    [vagrant@localhost ~]$ sudo usermod --shell /sbin/nologin kubelet
+
+    [vagrant@localhost ~]$ sudo usermod -aG dockerroot kubelet
+
+    [vagrant@localhost ~]$ sudo ls -Zd /var/lib/kubelet
+    drwxr-x---. root root system_u:object_r:var_lib_t:s0   /var/lib/kubelet
+
+    [vagrant@localhost ~]$ sudo restorecon -Rv -n /var/lib/kubelet
+    restorecon reset /var/lib/kubelet context system_u:object_r:var_lib_t:s0->system_u:object_r:docker_var_lib_t:s0    
+
+    [vagrant@localhost ~]$ sudo ls -Zd /var/lib/kubelet
+    drwxr-x---. root root system_u:object_r:docker_var_lib_t:s0   /var/lib/kubelet
+
+    [vagrant@localhost addons]$ sudo semanage port -l
+
 Service file
 
     [vagrant@localhost ~]$ vi kubernetes/1.3.10/centos/systemd/system/kubelet.service
@@ -805,7 +824,7 @@ Opts file
       --kubeconfig=/srv/kubernetes/kubeconfig \
       --master-service-namespace=default \
       --max-open-files=1000000 \
-      --max-pods=0 \
+      --max-pods=110 \
       --node-ip=10.64.33.81 \
       --non-masquerade-cidr=10.0.0.0/8 \
       --pod-infra-container-image=gcr.io/google_containers/pause-amd64:3.0 \
@@ -1097,12 +1116,12 @@ Reference
 
     https://github.com/coreos/coreos-kubernetes/blob/v0.4.0/multi-node/generic/controller-install.sh
 
-Pod image
-----------
+POD image and container
+------------------------
 
 Save local pulled
 
-Load from image archive
+    [tangfx@localhost ~]$ docker save -o gcr.io%252Fgoogle_containers%252Fpause-amd64%253A3.0.tar 99e59f495ffa
 
 A *gofileserver* HTTP archives
 
@@ -1125,13 +1144,98 @@ A *gofileserver* HTTP archives
 
     30% [==========>                            ] 13,531,220  33.2KB/s  eta 10m 40s
 
+Load from image archive
 
+    [vagrant@localhost ~]$ mv gcr.io%252Fgoogle_containers%252Fpause-amd64%253A3.0.tar pause-amd64.tar
 
-Kubernetes addons
+    [vagrant@localhost ~]$ docker load -i pause-amd64.tar    
+
+    [vagrant@localhost ~]$ docker images
+    <none>              <none>              99e59f495ffa        6 months ago        746.9 kB    
+
+    [vagrant@localhost ~]$ docker tag 99e59f495ffa gcr.io/google_containers/pause-amd64:3.0
+
+Validation
+
+    [vagrant@localhost addons]$ kubectl run netcat-hello-http --image=tangfeixiong/netcat-hello-http
+
+    [vagrant@localhost addons]$ kubectl get deployments,pods
+    NAME                                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+    netcat-hello-http                   1         1         1            1           7h
+    NAME                                READY     STATUS    RESTARTS     AGE
+    netcat-hello-http-839099240-o5q24   1/1       Running   0            24m
+
+    [vagrant@localhost addons]$ kubectl expose deployments/netcat-hello-http --port=80
+    service "netcat-hello-http" exposed
+
+    [vagrant@localhost addons]$ kubectl get ep,svc
+    NAME                ENDPOINTS          AGE
+    kubernetes          10.64.33.81:6443   2d
+    netcat-hello-http   10.121.24.2:80     1m
+    NAME                CLUSTER-IP         EXTERNAL-IP   PORT(S)   AGE
+    kubernetes          10.123.240.1       <none>        443/TCP   2d
+    netcat-hello-http   10.123.249.219     <none>        80/TCP    1m
+
+    [vagrant@localhost ~]$ curl 10.121.24.2
+    <html><head><title>welcome</title></head><body><h1>hello world</h1></body></html>
+
+    [vagrant@localhost ~]$ curl 10.123.249.219
+    <html><head><title>welcome</title></head><body><h1>hello world</h1></body></html>
+
+    [tangfx@localhost ~]$ curl 10.121.24.2
+    <html><head><title>welcome</title></head><body><h1>hello world</h1></body></html>
+
+    [tangfx@localhost ~]$ curl 10.123.249.219
+    <html><head><title>welcome</title></head><body><h1>hello world</h1></body></html>
+
+Kubernetes add-ons
 --------------------
 
 * Start kube-dns
 
+Using v19
+
+    [vagrant@localhost addons]$ kubectl create -f kube-dns-rc.yaml                  
+    replicationController "kube-dns-v19" created
+
+    [vagrant@localhost addons]$ kubectl get rc,pod --namespace=kube-system
+    NAME                 DESIRED   CURRENT   AGE
+    kube-dns-v19         1         1         3m
+    NAME                 READY     STATUS    RESTARTS   AGE
+    kube-dns-v19-o32di   2/3       Running   2          3m
+
+    [vagrant@localhost addons]$ kubectl logs pods/kube-dns-v19-o32di -c=kubedns --namespace=kube-system
+
+    [vagrant@localhost addons]$ kubectl logs pods/kube-dns-v19-o32di -c=dnsmasq --namespace=kube-system
+
+    [vagrant@localhost addons]$ kubectl logs pods/kube-dns-v19-o32di -c=healthz --namespace=kube-system
+
+    [vagrant@localhost addons]$ kubectl create -f kube-dns-svc.yaml
+    service "kube-dns" created
+
+    [vagrant@localhost addons]$ kubectl get ep,svc --namespace=kube-system          
+    NAME       ENDPOINTS       AGE
+    kube-dns                   6m
+    NAME       CLUSTER-IP      EXTERNAL-IP   PORT(S)         AGE
+    kube-dns   10.123.240.10   <none>        53/UDP,53/TCP   6m
+
+* Start kubernetes-dashboard
+
+    [vagrant@localhost addons]$ kubectl create -f kube-dashboard-rc.yaml
+    replicationcontroller "kubernetes-dashboard-v1.4.0" created
+
+    [vagrant@localhost addons]$ kubectl get pods,replicationcontrollers --namespace=kube-system
+
+    [vagrant@localhost addons]$ kubectl create -f kube-dashboard-svc.yaml
+    service "kubernetes-dashboard" created
+
+    [vagrant@localhost addons]$ kubectl get ep,svc --namespace=kube-system          
+    NAME                   ENDPOINTS        AGE
+    kube-dns                                1h
+    kubernetes-dashboard   10.121.24.4:9090   5m
+    NAME                   CLUSTER-IP       EXTERNAL-IP   PORT(S)         AGE
+    kube-dns               10.123.240.10    <none>        53/UDP,53/TCP   1h
+    kubernetes-dashboard   10.123.243.229   <none>        80/TCP          3m
 
 Install worker node
 --------------------

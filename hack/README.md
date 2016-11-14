@@ -13,17 +13,17 @@ Tables of Content
 Background
 -----------
 
-The R&D target is to depolying Metaswitch IMS into Kubernetes（v1.3+）
+The R&D target is to depolying Metaswitch ClearWater (IMS) into Kubernetes（v1.3+）
 
 Cluster：
 
-* 3 nodes CentOS 7.2 in Private Data center
+* 3 nodes CentOS 7 in Private Data center
 
-* physical networking：
+* Physical networking：
 
 Project：
 
-* inspired by Metaswitch clearwater-docker repository
+* Inspired by Metaswitch clearwater-docker repository
 
 从github克隆fork仓库
 
@@ -44,7 +44,7 @@ Project：
     origin  https://github.com/stackdocker/clearwater-docker (fetch)
     origin  https://github.com/stackdocker/clearwater-docker (push)
 
-如果join community，以pull request
+Join community，for pull request available
 
     tangf@DESKTOP-H68OQDV /cygdrive/g/work/src/github.com/Metaswitch/clearwater-docker
     $ git remote add upstream https://github.com/Metaswitch/clearwater-docker
@@ -58,7 +58,7 @@ Project：
 
 POC
 -----
-POC是开发者在Staging环境内无法或受限下（例如internet操作等），而在Staging环境外（如个人开发计算机，其它云端）按Staging相同架构而组建的开发环境：cluster的操作系统是一致的，cluster网络的结构是一致的。
+POC是开发者在Staging环境内无法或受限下（例如internet），而在Staging环境外（如个人开发计算机，其它云端）按Staging相同架构而组建的开发环境：cluster的操作系统是一致的，cluster的网络结构是一致的。
 
 ### 使用virtualbox和vagrant平台
 
@@ -171,19 +171,27 @@ Provision VM
        PV UUID               oUVt67-9kA8-uxSc-e6rl-J6ER-unza-Yuc0IA
 
 
-### More documentations
+### Details
 
-In *kubernetes-clearwater* path. now including:
+In *kubernetes-clearwater* path.
+
+* CentOS DevOps
 
 * Docker v1.10.3 installation
 
-* Kubernetes v1.4 installation
+* Etcd v2 installation
+
+* Flannel installation
+
+* Kubernetes v1.3 installation
+
+* Docker registry 2.4 installation
 
 Staging
 ---------
 
-Documentations are archived in *k8s-cw-staging-cmri* path
+Documentations are archived in *k8s-cw-staging-cmri* path.
 
-Currently including:
+* CentOS DevOps
 
-* Install k8s v1.4 cluster into staging cluster
+* K8s v1.3 installation

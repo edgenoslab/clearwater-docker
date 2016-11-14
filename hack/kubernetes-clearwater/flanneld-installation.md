@@ -80,19 +80,19 @@ Install package
 Command *etcdctl*
 
     [vagrant@localhost ~]$ etcdctl set /coreos.com/network/config '{
-    >  "Network": "10.120.0.0/14",
+    >  "Network": "10.120.0.0/15",
     >  "SubnetLen": 23,
-    >  "SubnetMin": "10.120.128.0",
-    >  "SubnetMax": "10.123.128.0",
+    >  "SubnetMin": "10.120.0.0",
+    >  "SubnetMax": "10.121.254.0",
     >  "Backend": {
     >    "Type": "udp"
     >  }
     >}'
     {
-      "Network": "10.120.0.0/14",
+      "Network": "10.120.0.0/15",
       "SubnetLen": 23,
-      "SubnetMin": "10.120.128.0",
-      "SubnetMax": "10.123.128.0",
+      "SubnetMin": "10.120.0.0",
+      "SubnetMax": "10.121.254.0",
       "Backend": {
         "Type": "udp"
       }
@@ -255,7 +255,7 @@ NIC
 
 Install into fedora23
 
-    [tangfx@localhost sysconfig]$ sudo dnf install flannel
+    [tangfx@localhost ~]$ sudo dnf install flannel
     Last metadata expiration check: 0:00:40 ago on Sun Nov 13 07:16:02 2016.
     Dependencies resolved.
     ================================================================================
@@ -288,7 +288,7 @@ Opts
 
 Service
 
-    [tangfx@localhost sysconfig]$ sudo systemctl enable flanneld.service
+    [tangfx@localhost ~]$ sudo systemctl enable flanneld.service
     Created symlink from /etc/systemd/system/multi-user.target.wants/flanneld.service to /usr/lib/systemd/system/flanneld.service.
     Created symlink from /etc/systemd/system/docker.service.requires/flanneld.service to /usr/lib/systemd/system/flanneld.service.
 
@@ -296,19 +296,19 @@ Service
 
 Validation
 
-    [tangfx@localhost sysconfig]$ cat /run/flannel/docker
+    [tangfx@localhost ~]$ cat /run/flannel/docker
     DOCKER_OPT_BIP="--bip=10.120.204.1/23"
     DOCKER_OPT_IPMASQ="--ip-masq=true"
     DOCKER_OPT_MTU="--mtu=1472"
     DOCKER_NETWORK_OPTIONS=" --bip=10.120.204.1/23 --ip-masq=true --mtu=1472 "
 
-    [tangfx@localhost sysconfig]$ cat /run/flannel/subnet.env
+    [tangfx@localhost ~]$ cat /run/flannel/subnet.env
     FLANNEL_NETWORK=10.120.0.0/14
     FLANNEL_SUBNET=10.120.204.1/23
     FLANNEL_MTU=1472
     FLANNEL_IPMASQ=false
 
-    [tangfx@localhost sysconfig]$ sudo systemctl -l status flanneld.service
+    [tangfx@localhost ~]$ sudo systemctl -l status flanneld.service
     鈼▒ flanneld.service - Flanneld overlay address etcd agent
        Loaded: loaded (/usr/lib/systemd/system/flanneld.service; enabled; vendor preset: disabled)
        Active: active (running) since Sun 2016-11-13 07:21:23 CST; 21s ago
@@ -327,7 +327,7 @@ Validation
     Nov 13 07:21:23 localhost.localdomain flanneld[8563]: I1113 07:21:23.692843    8563 udp.go:247] Subnet added: 10.121.24.0/23
     Nov 13 07:21:23 localhost.localdomain systemd[1]: Started Flanneld overlay address etcd agent.
 
-    [tangfx@localhost sysconfig]$ ip a show flannel0
+    [tangfx@localhost ~]$ ip a show flannel0
     10: flannel0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1472 qdisc fq_codel state UNKNOWN group default qlen 500
         link/none
         inet 10.120.204.0/14 scope global flannel0
@@ -335,7 +335,7 @@ Validation
         inet6 fe80::edd6:165a:c078:f334/64 scope link flags 800
            valid_lft forever preferred_lft forever
 
-    [tangfx@localhost sysconfig]$ ip r
+    [tangfx@localhost ~]$ ip r
     default via 10.0.2.2 dev enp0s3  proto static  metric 100
     10.0.2.0/24 dev enp0s3  proto kernel  scope link  src 10.0.2.15  metric 100
     10.64.33.0/24 dev enp0s8  proto kernel  scope link  src 10.64.33.90  metric 100
@@ -345,7 +345,7 @@ Validation
 
 * Command *nmcli*
 
-    [tangfx@localhost sysconfig]$ sudo nmcli d
+    [tangfx@localhost ~]$ sudo nmcli d
     DEVICE           TYPE         STATE      CONNECTION
     br-34d5cc1180cb  bridge       connected  br-34d5cc1180cb
     lbr0             bridge       connected  lbr0
@@ -358,7 +358,7 @@ Validation
     tun0             openvswitch  unmanaged  --
     vxlan_sys_4789   vxlan        unmanaged  --
 
-    [tangfx@localhost sysconfig]$ sudo nmcli con edit lbr0
+    [tangfx@localhost ~]$ sudo nmcli con edit lbr0
     nmcli> set ipv4.addresses
     Enter 'addresses' value: 10.120.204.1/23
 
@@ -367,10 +367,10 @@ Validation
 
     nmcli> quit
 
-    [tangfx@localhost sysconfig]$ sudo nmcli con up lbr0
+    [tangfx@localhost ~]$ sudo nmcli con up lbr0
     Connection successfully activated (master waiting for slaves) (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/6)
 
-    [tangfx@localhost sysconfig]$ ip a show lbr0
+    [tangfx@localhost ~]$ ip a show lbr0
     4: lbr0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
         link/ether f2:41:f3:b1:a3:c3 brd ff:ff:ff:ff:ff:ff
         inet 10.120.204.1/23 brd 10.120.205.255 scope global lbr0
@@ -380,7 +380,7 @@ Validation
 
 From 2nd PING 1st
 
-    [tangfx@localhost sysconfig]$ ping -c3 10.121.24.0
+    [tangfx@localhost ~]$ ping -c3 10.121.24.0
     PING 10.121.24.0 (10.121.24.0) 56(84) bytes of data.
     64 bytes from 10.121.24.0: icmp_seq=1 ttl=62 time=0.670 ms
     64 bytes from 10.121.24.0: icmp_seq=2 ttl=62 time=1.07 ms
@@ -390,7 +390,7 @@ From 2nd PING 1st
     3 packets transmitted, 3 received, 0% packet loss, time 2001ms
     rtt min/avg/max/mdev = 0.670/0.938/1.074/0.191 ms
 
-    [tangfx@localhost sysconfig]$ ping -c3 10.121.24.1
+    [tangfx@localhost ~]$ ping -c3 10.121.24.1
     PING 10.121.24.1 (10.121.24.1) 56(84) bytes of data.
     64 bytes from 10.121.24.1: icmp_seq=1 ttl=62 time=0.104 ms
     64 bytes from 10.121.24.1: icmp_seq=2 ttl=62 time=8.45 ms
@@ -411,7 +411,7 @@ From 1st PING 2nd
     --- 10.120.204.1 ping statistics ---
     3 packets transmitted, 3 received, 0% packet loss, time 2002ms
     rtt min/avg/max/mdev = 0.538/0.960/1.240/0.303 ms
-    
+
     [vagrant@localhost ~]$ ping -c3 10.120.204.0
     PING 10.120.204.0 (10.120.204.0) 56(84) bytes of data.
     64 bytes from 10.120.204.0: icmp_seq=1 ttl=62 time=0.412 ms
