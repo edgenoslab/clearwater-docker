@@ -90,16 +90,20 @@ Getting started：
         config.vm.box_version = "1609.01"
 
         # config.vm.network "private_network", ip: "192.168.33.10"
-        config.vm.network "private_network", ip: "10.64.33.81"
+        config.vm.network "private_network", ip: "10.64.33.81", auto_config: false
 
         # config.vm.synced_folder "../data", "/vagrant_data"
-        config.vm.synced_folder "G:/work", "/work"
+        config.vm.synced_folder "G:/work", "/work", disabled: true
 
         # View the documentation for the provider you are using for more
         # information on available options.
         config.vm.provider "virtualbox" do |vb|
-          vb.memory = 3072
+          vb.memory = 4096
+          vb.auto_nat_dns_proxy = false          
+          vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]          
         end
+
+        config.ssh.insert_key = false        
 
 Provision VM
 
@@ -170,6 +174,22 @@ Provision VM
        Allocated PE          1254
        PV UUID               oUVt67-9kA8-uxSc-e6rl-J6ER-unza-Yuc0IA
 
+Issue
+
+    tangf@DESKTOP-H68OQDV /cygdrive/g/atlas.hashicorp.com/centos/boxes/7
+    $ /cygdrive/g/app/Oracle/VirtualBox/VBoxManage.exe list runningvms
+    "origin_openshiftdev_1470677374340_33624" {c3c6bb78-ecec-4c13-922a-c146eb76fc35}
+    "7_default_1478518426514_80470" {c1bde9cb-97f4-4f91-94d2-6b125a13dd44}
+
+    tangf@DESKTOP-H68OQDV /cygdrive/g/atlas.hashicorp.com/centos/boxes/7
+    $ vagrant halt
+    ==> default: Attempting graceful shutdown of VM...
+
+    tangf@DESKTOP-H68OQDV /cygdrive/g/atlas.hashicorp.com/centos/boxes/7
+    $ /cygdrive/g/app/Oracle/VirtualBox/VBoxManage.exe modifyvm "7_default_1478518426514_80470" --natdnshostresolver1 on
+
+    tangf@DESKTOP-H68OQDV /cygdrive/g/atlas.hashicorp.com/centos/boxes/7
+    $ /cygdrive/g/app/Oracle/VirtualBox/VBoxManage.exe modifyvm "7_default_1478518426514_80470" --natdnsproxy1 off
 
 ### Details
 

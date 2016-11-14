@@ -192,7 +192,9 @@ Validation
     DOCKER_OPT_MTU="--mtu=1472"
     DOCKER_NETWORK_OPTIONS=" --bip=10.121.24.1/23 --ip-masq=true --mtu=1472 "
 
-    [vagrant@localhost ~]$ sudo systemctl restart docker.service
+    [vagrant@localhost ~]$ cat /usr/lib/systemd/system/docker.service.d/flannel.conf
+    [Service]
+    EnvironmentFile=-/run/flannel/docker
 
     [vagrant@localhost ~]$ ip a
     1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN

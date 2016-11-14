@@ -1,0 +1,71 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: stackdocker
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      stackdocker-app: docker-distribution
+  template:
+    metadata:
+      labels:
+        stackdocker-app: docker-distribution
+    spec:
+      containers:
+      - env:
+        - name: DOCKER_REGISTRY_CONFIG
+          value: /etc/docker/registry/config.yml
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: /certs/tls.crt
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: /certs/tls.key
+        - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+          value: /var/lib/registry
+        image: docker.io/registry:2.4.1
+        name: registry
+        ports:
+        - containerPort: 5000
+          hostIP: 10.64.33.81
+          hostPort: 5000
+        securityContext: 
+          privileged: true
+        volumeMounts:
+        - name: basic-realm
+          mountPath: /auth
+          readOnly: true
+        - name: selfsigned-tls
+          mountPath: /certs
+          readOnly: true
+        - name: config
+          mountPath: /etc/docker/registry
+          readOnly: true
+        - name: repo
+          mountPath: /var/lib/registry
+      volumes:
+      - name: basic-realm
+        secret: 
+          secretName: registry-htpasswd
+          items:
+          - key: htpasswd
+            path: htpasswd
+      - name: selfsigned-tls
+        secret:
+          secretName: registry-tls
+          items:
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+      - name: config
+        configMap:
+          name: registry-config
+          items:
+          - key: config.yml
+            path: config.yml
+      - name: repo
+        hostPath: 
+          path: /var/lib/registry
