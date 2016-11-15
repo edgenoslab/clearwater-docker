@@ -193,7 +193,7 @@ Issue
 
 ### Details
 
-In *kubernetes-clearwater* path.
+Mainly in [kubernetes-clearwater](./kubernetes-clearwater) path.
 
 * CentOS DevOps
 
@@ -207,11 +207,15 @@ In *kubernetes-clearwater* path.
 
 * Docker registry 2.4 installation
 
+Some scratch operation docs are in [kubernetes-clearwater/Kubernetes](./kubernetes-clearwater/Kubernetes)
+
 Staging
 ---------
 
-Documentations are archived in *k8s-cw-staging-cmri* path.
+Documentations are archived in [k8s-cw-staging-cmri](./k8s-cw-staging-cmri) path.
 
 * CentOS DevOps
 
-* K8s v1.3 installation
+* K8s v1.3 DevOps
+
+* ClearWater k8s DevOps

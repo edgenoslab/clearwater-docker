@@ -1,0 +1,31 @@
+[Unit]
+Description=Kubernetes container mgmt daemon - kubelet
+Documentation=https://github.com/kubernetes/kubernetes
+After=docker.service
+Requires=docker.service
+# Wants=
+Conflicts=openshift-node.service
+
+[Service]
+# Type=notify
+# NotifyAccess=all
+Type=simple
+User=root
+
+Environment=KUBERNETES_BUILD_VERSION=1.3.10
+EnvironmentFile=/etc/sysconfig/kubelet
+WorkingDirectory=/opt/kubernetes
+
+ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
+ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+
+ExecStart=/opt/kubernetes/server/bin/kubelet $KUBELET_OPTS
+# ExecStart=/bin/bash -c "/opt/kubernetes/${KUBERNETES_BUILD_VERSION}/centos/bin/kubelet ${KUBELET_OPTS}"
+
+# Restart=always
+Restart=on-failure
+RestartSec=10
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

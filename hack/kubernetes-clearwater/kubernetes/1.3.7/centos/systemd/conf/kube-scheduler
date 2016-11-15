@@ -1,0 +1,22 @@
+# KUBE_SCHEDULER_VERSION=1.3.10
+
+# ADDRESS_LISTEN=10.64.33.81
+# MASTER_ADDRESS=https://10.64.33.81:6443
+
+# --cloud-config="": The path to the cloud provider configuration file
+# --cloud-provider="": The provider for cloud services
+
+# --service-cluster-ip-range=<nil>: A CIDR notation IP range
+# Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
+# CLUSTER_CIDR=10.120.0.0/14
+# SERVICE_CIDR=10.123.240.0/20
+# CLUSTER_MASTER=10.123.240.1
+# CLUSTER_DNS=10.123.240.10
+
+KUBE_SCHEDULER_OPTS="--address=10.64.33.81 \
+  --algorithm-provider=DefaultProvider \
+  --kubeconfig=/srv/kubernetes/kubeconfig \
+  --master=https://10.64.33.81:6443 \
+  --port=10251 \
+  --scheduler-name=default-scheduler \
+  --v=2"
