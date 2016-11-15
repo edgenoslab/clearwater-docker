@@ -1593,11 +1593,30 @@ Load `POD image`
 
     [tangfx@localhost ~]$ docker load -i gcr.io%252Fgoogle_containers%252Fpause-amd64%253A3.0.tar
 
-
-
 Validation
 
     [tangfx@localhost ~]$ KUBECONFIG=.pki/kubernetes/kubeconfig kubectl get nodes
     NAME          STATUS    AGE
     10.64.33.81   Ready     20h
     10.64.33.90   Ready     12h
+
+Scale
+
+    [tangfx@localhost ~]$ KUBECONFIG=.pki/kubernetes/kubeconfig kubectl scale --replicas=2 deployment/netcat-hello-http
+
+    [tangfx@localhost ~]$ KUBECONFIG=.pki/kubernetes/kubeconfig kubectl get ep,svc
+    NAME                    ENDPOINTS                       AGE
+    ep/kubernetes           10.64.33.81:6443                1d
+    ep/netcat-hello-http    10.120.22.2:80,10.121.24.2:80   1d
+    NAME                    CLUSTER-IP                      EXTERNAL-IP   PORT(S)   AGE
+    svc/kubernetes          10.123.240.1                    <none>        443/TCP   1d
+    svc/netcat-hello-http   10.123.242.12                   <none>        80/TCP    1d
+
+    [tangfx@localhost ~]$ curl 10.120.22.2
+    <html><head><title>welcome</title></head><body><h1>hello world</h1></body></html>
+
+    [tangfx@localhost ~]$ curl 10.121.24.2
+    <html><head><title>welcome</title></head><body><h1>hello world</h1></body></html>
+
+    [tangfx@localhost ~]$ curl 10.123.242.12
+    <html><head><title>welcome</title></head><body><h1>hello world</h1></body></html>

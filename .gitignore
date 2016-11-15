@@ -1,0 +1,3 @@
+hack/*.txt
+hack/kubernetes-clearwater/*.gpg
+hack/kubernetes-clearwater/openshift*
