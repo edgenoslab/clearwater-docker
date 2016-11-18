@@ -1,3 +1,5 @@
 hack/*.txt
 hack/kubernetes-clearwater/*.gpg
 hack/kubernetes-clearwater/openshift*
+hack/**/http%3A%2F%2Frepo.cw-ngv.com%2Frepo-key
+hack/**/*.tangfx
