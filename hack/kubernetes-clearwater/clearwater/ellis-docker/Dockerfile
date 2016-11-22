@@ -1,5 +1,5 @@
 # FROM clearwater/base
-FROM docker.io/tangfeixiong/clearwater-base-onbuild:1611180614.gitrev-c2da9c9
+FROM docker.io/tangfeixiong/clearwater-base-onbuild
 MAINTAINER tangfeixiong<tangfx128@gmail.com>
 # Inspired by maintainers@projectclearwater.org
 

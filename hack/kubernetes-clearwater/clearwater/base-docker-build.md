@@ -21,38 +21,26 @@ Content
     Dockerfile  Makefile
 
 
-    [tangfx@localhost base]$ make
-    #
-    docker build --tag=docker.io/tangfeixiong/clearwater-base-onbuild:1611180614.gitrev-c2da9c9 --file=Dockerfile ../../../../base
-    unable to prepare context: The Dockerfile (/home/tangfx/clearwater-docker/hack/k8s-cw/cw-docker/base/Dockerfile) must be within the build context (../../../../base)
-    Makefile:7: recipe for target 'all' failed
-    make: *** [all] Error 1
-    [tangfx@localhost base]$ vi Makefile
-    [tangfx@localhost base]$ vi Makefile
-    [tangfx@localhost base]$ make
-    docker build --tag=docker.io/tangfeixiong/clearwater-base-onbuild:1611180614.gitrev-c2da9c9 --file=../../../../base/Dockerfile.tangfx ../../../../base
+    [tangfx@localhost cw-docker]$ make base IMG_TAG=1611180614.gitrev-c2da9c9
+    /usr/bin/cp base/Dockerfile ../../../base/Dockerfile.tangfx
+    /usr/bin/docker build --tag=docker.io/tangfeixiong/clearwater-base-onbuild:1611180614.gitrev-c2da9c9 --file=../../../base/Dockerfile.tangfx ../../../base
     Sending build context to Docker daemon 10.24 kB
     Step 1 : FROM ubuntu:14.04
      ---> 1e0c3dd64ccd
     Step 2 : MAINTAINER tangfeixiong <tangfx128@gmail.com>
      ---> Using cache
      ---> 38fb803106e2
-    Step 3 : ENV UBUNTU_REPO_MIRROR "http://mirrors.aliyun.com/" CW_NGV_REPO_MIRROR "http://10.64.33.1:48080/mirror/repo.cw-ngv.com/" CW_NGV_REPO_GPG_KEY_URL http://10.64.33.1:48080/gpg-key/http%253A%252F%252Frepo.cw-ngv.com
-     ---> Running in 68922e538509
-     ---> bc9be68e9dbf
-    Removing intermediate container 68922e538509
-    Step 4 : USER root
-     ---> Running in 4104a3f63733
-     ---> b719b6c1b50c
-    Removing intermediate container 4104a3f63733
-    Step 5 : ADD sysctl /sbin/sysctl
-     ---> 44ed7ee96e36
-    Removing intermediate container aa83159d8d57
-    Step 6 : ADD *supervisord.conf /etc/supervisor/conf.d/
-     ---> 156344dc469f
-    Removing intermediate container c7bcf3953ae9
-    Step 7 : RUN ( [ -n $UBUNTU_REPO_MIRROR ] && sed -i "s%http://archive.ubuntu.com/%$UBUNTU_REPO_MIRROR%g;s%http://security.ubuntu.com/%$UBUNTU_REPO_MIRROR%g" /etc/apt/sources.list ) &&   apt-get update &&   DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor curl &&   ( [ -n $CW_NGV_REPO_GPG_KEY_URL ] && curl -sL $CW_NGV_REPO_MIRROR/repo_key | apt-key add - || curl -L http://repo.cw-ngv.com/repo_key | apt-key add - ) &&   echo deb http://repo.cw-ngv.com/stable binary/ > /etc/apt/sources.list.d/clearwater.list &&   ( [ -n $CW_NGV_REPO_MIRROR ] && sed -i "s%http://repo.cw-ngv.com/%$CW_NGV_REPO_MIRROR%" /etc/apt/sources.list.d/clearwater.list ) &&   apt-get update &&   DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes clearwater-infrastructure clearwater-auto-config-docker clearwater-management &&   mkdir -p /var/run/sshd /var/log/supervisor &&   echo 'root:root' | chpasswd &&   sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config &&   locale-gen en_US.UTF-8 &&   sed -e 's/\#\(precedence ::ffff:0:0\/96  100\)/\1/g' -i /etc/gai.conf &&   mv /etc/supervisor/conf.d/clearwater-infrastructure.supervisord.conf /etc/supervisor/conf.d/clearwater-infrastructure.conf &&   mv /etc/supervisor/conf.d/clearwater-group.supervisord.conf /etc/supervisor/conf.d/clearwater-group.conf &&   /etc/init.d/clearwater-auto-config-docker restart &&   /etc/init.d/clearwater-infrastructure restart
-     ---> Running in 047257514ddc
+    Step 3 : ENV UBUNTU_REPO_MIRROR "http://mirrors.aliyun.com/" CW_NGV_REPO_MIRROR "http://10.64.33.1:48080/mirror/repo.cw-ngv.com" CW_NGV_REPO_GPG_KEY_URL http://10.64.33.1:48080/gpg-key/http%253A%252F%252Frepo.cw-ngv.com
+     ---> Using cache
+     ---> 296c3573b4e7
+    Step 4 : ADD sysctl /sbin/sysctl
+     ---> Using cache
+     ---> 02e9c7bd6164
+    Step 5 : ADD *supervisord.conf /etc/supervisor/conf.d/
+     ---> Using cache
+     ---> 2295a4ac32d6
+    Step 6 : RUN ( [ -n $UBUNTU_REPO_MIRROR ] &&   sed -i "s%http://archive.ubuntu.com/%$UBUNTU_REPO_MIRROR%g;s%http://security.ubuntu.com/%$UBUNTU_REPO_MIRROR%g" /etc/apt/sources.list ) &&   apt-get update &&   DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor curl &&   mkdir -p /var/run/sshd /var/log/supervisor &&   echo 'root:root' | chpasswd &&   sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config &&   locale-gen en_US.UTF-8 &&   sed -e 's/\#\(precedence ::ffff:0:0\/96  100\)/\1/g' -i /etc/gai.conf &&   ( [ -n $CW_NGV_REPO_MIRROR ] &&   echo deb $CW_NGV_REPO_MIRROR/stable binary/ > /etc/apt/sources.list.d/clearwater.list ||   echo deb http://repo.cw-ngv.com/stable binary/ > /etc/apt/sources.list.d/clearwater.list ) &&   ( [ -n $CW_NGV_REPO_GPG_KEY_URL ] &&   curl -sL $CW_NGV_REPO_MIRROR/repo_key | apt-key add - ||   curl -L http://repo.cw-ngv.com/repo_key | apt-key add - ) &&   apt-get update &&   DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes clearwater-infrastructure clearwater-auto-config-docker clearwater-management &&   /etc/init.d/clearwater-auto-config-docker restart &&   /etc/init.d/clearwater-infrastructure restart &&   mv /etc/supervisor/conf.d/clearwater-infrastructure.supervisord.conf /etc/supervisor/conf.d/clearwater-infrastructure.conf &&   mv /etc/supervisor/conf.d/clearwater-group.supervisord.conf /etc/supervisor/conf.d/clearwater-group.conf &&   rm -rf /var/lib/apt/lists/*
+     ---> Running in 7b08f9c8fc13
     Ign http://mirrors.aliyun.com trusty InRelease
     Get:1 http://mirrors.aliyun.com trusty-updates InRelease [65.9 kB]
     Get:2 http://mirrors.aliyun.com trusty-security InRelease [65.9 kB]
@@ -76,7 +64,7 @@ Content
     Get:20 http://mirrors.aliyun.com trusty/main amd64 Packages [1743 kB]
     Get:21 http://mirrors.aliyun.com trusty/restricted amd64 Packages [16.0 kB]
     Get:22 http://mirrors.aliyun.com trusty/universe amd64 Packages [7589 kB]
-    Fetched 22.3 MB in 23s (952 kB/s)
+    Fetched 22.3 MB in 22s (972 kB/s)
     Reading package lists...
     Reading package lists...
     Building dependency tree...
@@ -112,7 +100,7 @@ Content
       python-minimal python-pkg-resources python-requests python-six
       python-urllib3 python2.7 python2.7-minimal ssh-import-id supervisor tcpd
       wget xauth
-    0 upgraded, 57 newly installed, 0 to remove and 7 not upgraded.
+    0 upgraded, 57 newly installed, 0 to remove and 9 not upgraded.
     Need to get 9433 kB of archives.
     After this operation, 42.4 MB of additional disk space will be used.
     Get:1 http://mirrors.aliyun.com/ubuntu/ trusty-updates/main libroken18-heimdal amd64 1.6~git20131207+dfsg-1ubuntu1.1 [40.0 kB]
@@ -174,7 +162,7 @@ Content
     Get:57 http://mirrors.aliyun.com/ubuntu/ trusty/universe supervisor all 3.0b2-1 [314 kB]
     Extracting templates from packages: 100%
     Preconfiguring packages ...
-    Fetched 9433 kB in 7s (1212 kB/s)
+    Fetched 9433 kB in 9s (982 kB/s)
     Selecting previously unselected package libroken18-heimdal:amd64.
     (Reading database ... 11558 files and directories currently installed.)
     Preparing to unpack .../libroken18-heimdal_1.6~git20131207+dfsg-1ubuntu1.1_amd64.deb ...
@@ -417,10 +405,13 @@ Content
     Updating certificates in /etc/ssl/certs... 173 added, 0 removed; done.
     Running hooks in /etc/ca-certificates/update.d....done.
     Processing triggers for ureadahead (0.100.0-16) ...
+    Generating locales...
+      en_US.UTF-8... done
+    Generation complete.
     gpg: no valid OpenPGP data found.
       % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                      Dload  Upload   Total   Spent    Left  Speed
-    100  3149  100  3149    0     0   3200      0 --:--:-- --:--:-- --:--:--  3200
+    100  3149  100  3149    0     0   3063      0  0:00:01  0:00:01 --:--:--  3066
     OK
     Ign http://10.64.33.1:48080 binary/ InRelease
     Get:1 http://10.64.33.1:48080 binary/ Release.gpg [819 B]
@@ -428,15 +419,15 @@ Content
     Ign http://mirrors.aliyun.com trusty InRelease
     Hit http://mirrors.aliyun.com trusty-updates InRelease
     Hit http://mirrors.aliyun.com trusty-security InRelease
-    Hit http://mirrors.aliyun.com trusty Release.gpg
-    Hit http://mirrors.aliyun.com trusty Release
     Get:3 http://10.64.33.1:48080 binary/ Packages [21.1 kB]
+    Hit http://mirrors.aliyun.com trusty Release.gpg
     Hit http://mirrors.aliyun.com trusty-updates/main Sources
     Hit http://mirrors.aliyun.com trusty-updates/restricted Sources
     Hit http://mirrors.aliyun.com trusty-updates/universe Sources
     Hit http://mirrors.aliyun.com trusty-updates/main amd64 Packages
     Hit http://mirrors.aliyun.com trusty-updates/restricted amd64 Packages
     Hit http://mirrors.aliyun.com trusty-updates/universe amd64 Packages
+    Hit http://mirrors.aliyun.com trusty Release
     Hit http://mirrors.aliyun.com trusty-security/main Sources
     Hit http://mirrors.aliyun.com trusty-security/restricted Sources
     Hit http://mirrors.aliyun.com trusty-security/universe Sources
@@ -449,7 +440,7 @@ Content
     Hit http://mirrors.aliyun.com trusty/main amd64 Packages
     Hit http://mirrors.aliyun.com trusty/restricted amd64 Packages
     Hit http://mirrors.aliyun.com trusty/universe amd64 Packages
-    Fetched 23.1 kB in 4s (5175 B/s)
+    Fetched 23.1 kB in 4s (5673 B/s)
     Reading package lists...
     Reading package lists...
     Building dependency tree...
@@ -503,7 +494,7 @@ Content
       python-pip-whl python-requests-whl python-setuptools python-setuptools-whl
       python-six-whl python-urllib3-whl python-virtualenv python-wheel
       python2.7-dev python3-pkg-resources realpath sysstat xz-utils zlib1g-dev
-    0 upgraded, 90 newly installed, 0 to remove and 7 not upgraded.
+    0 upgraded, 90 newly installed, 0 to remove and 9 not upgraded.
     Need to get 90.9 MB of archives.
     After this operation, 236 MB of additional disk space will be used.
     Get:1 http://10.64.33.1:48080/mirror/repo.cw-ngv.com/stable/ binary/ clearwater-auto-config-docker 1.0-161102.114310 [17.0 kB]
@@ -513,12 +504,12 @@ Content
     Get:5 http://10.64.33.1:48080/mirror/repo.cw-ngv.com/stable/ binary/ clearwater-cluster-manager 1.0-161108.170154 [3709 kB]
     Get:6 http://10.64.33.1:48080/mirror/repo.cw-ngv.com/stable/ binary/ clearwater-queue-manager 1.0-161108.170154 [3690 kB]
     Get:7 http://10.64.33.1:48080/mirror/repo.cw-ngv.com/stable/ binary/ clearwater-config-manager 1.0-161108.170154 [3648 kB]
-    Get:8 http://mirrors.aliyun.com/ubuntu/ trusty/main libnfnetlink0 amd64 1.0.1-2 [15.0 kB]
-    Get:9 http://mirrors.aliyun.com/ubuntu/ trusty-updates/main libasan0 amd64 4.8.4-2ubuntu1~14.04.3 [63.1 kB]
-    Get:10 http://mirrors.aliyun.com/ubuntu/ trusty-updates/main libatomic1 amd64 4.8.4-2ubuntu1~14.04.3 [8636 B]
-    Get:11 http://mirrors.aliyun.com/ubuntu/ trusty/main libgmp10 amd64 2:5.1.3+dfsg-1ubuntu1 [218 kB]
-    Get:12 http://10.64.33.1:48080/mirror/repo.cw-ngv.com/stable/ binary/ clearwater-diags-monitor 1.0-161102.114310 [24.1 kB]
-    Get:13 http://10.64.33.1:48080/mirror/repo.cw-ngv.com/stable/ binary/ clearwater-management 1.0-161108.170154 [12.5 kB]
+    Get:8 http://10.64.33.1:48080/mirror/repo.cw-ngv.com/stable/ binary/ clearwater-diags-monitor 1.0-161102.114310 [24.1 kB]
+    Get:9 http://10.64.33.1:48080/mirror/repo.cw-ngv.com/stable/ binary/ clearwater-management 1.0-161108.170154 [12.5 kB]
+    Get:10 http://mirrors.aliyun.com/ubuntu/ trusty/main libnfnetlink0 amd64 1.0.1-2 [15.0 kB]
+    Get:11 http://mirrors.aliyun.com/ubuntu/ trusty-updates/main libasan0 amd64 4.8.4-2ubuntu1~14.04.3 [63.1 kB]
+    Get:12 http://mirrors.aliyun.com/ubuntu/ trusty-updates/main libatomic1 amd64 4.8.4-2ubuntu1~14.04.3 [8636 B]
+    Get:13 http://mirrors.aliyun.com/ubuntu/ trusty/main libgmp10 amd64 2:5.1.3+dfsg-1ubuntu1 [218 kB]
     Get:14 http://mirrors.aliyun.com/ubuntu/ trusty/main libisl10 amd64 0.12.2-1 [419 kB]
     Get:15 http://mirrors.aliyun.com/ubuntu/ trusty/main libcloog-isl4 amd64 0.18.2-1 [57.5 kB]
     Get:16 http://mirrors.aliyun.com/ubuntu/ trusty-updates/main libgomp1 amd64 4.8.4-2ubuntu1~14.04.3 [23.1 kB]
@@ -598,7 +589,7 @@ Content
     Get:90 http://mirrors.aliyun.com/ubuntu/ trusty-updates/main python-wheel all 0.24.0-1~ubuntu1 [44.7 kB]
     Extracting templates from packages: 100%
     Preconfiguring packages ...
-    Fetched 90.9 MB in 1min 5s (1394 kB/s)
+    Fetched 90.9 MB in 1min 16s (1187 kB/s)
     Selecting previously unselected package libnfnetlink0:amd64.
     (Reading database ... 16382 files and directories currently installed.)
     Preparing to unpack .../libnfnetlink0_1.0.1-2_amd64.deb ...
@@ -1417,31 +1408,46 @@ Content
     Processing triggers for ureadahead (0.100.0-16) ...
     Setting up clearwater-management (1.0-161108.170154) ...
     Processing triggers for libc-bin (2.19-0ubuntu6.9) ...
-    Generating locales...
-      en_US.UTF-8... done
-    Generation complete.
      * Restarting clearwater-infrastructure clearwater-infrastructure
-    mv: cannot move '/tmp/hosts.5361' to '/etc/hosts': Device or resource busy
+    mv: cannot move '/tmp/hosts.5360' to '/etc/hosts': Device or resource busy
      * Restarting DNS forwarder and DHCP server dnsmasq
 
     dnsmasq: setting capabilities failed: Operation not permitted
        ...fail!
     hostname: you must be root to change the host name
-    mv: cannot move '/tmp/hosts.5379' to '/etc/hosts': Device or resource busy
+    mv: cannot move '/tmp/hosts.5378' to '/etc/hosts': Device or resource busy
     Configuring monit for only localhost access
        ...done.
-     ---> ca6402754ad6
-    Removing intermediate container 047257514ddc
-    Step 8 : ENV LANG en_US.UTF-8 LANGUAGE en_US:en LC_ALL en_US.UTF-8
-     ---> Running in b4eff97c3e32
-     ---> 5ba6877ea230
-    Removing intermediate container b4eff97c3e32
+     ---> ca4a268c6af1
+    Removing intermediate container 7b08f9c8fc13
+    Step 7 : ENV LANG en_US.UTF-8 LANGUAGE en_US:en LC_ALL en_US.UTF-8
+     ---> Running in eab63f3351d3
+     ---> 150f445a88f1
+    Removing intermediate container eab63f3351d3
+    Step 8 : ONBUILD user root
+     ---> Running in ed3ab12df266
+     ---> 5f7a3bf5502c
+    Removing intermediate container ed3ab12df266
     Step 9 : ONBUILD expose 22
-     ---> Running in bfbffd42fdb9
-     ---> 59c3c389a163
-    Removing intermediate container bfbffd42fdb9
+     ---> Running in a7cbda1e83f8
+     ---> 4c39f8841180
+    Removing intermediate container a7cbda1e83f8
     Step 10 : ONBUILD cmd /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
-     ---> Running in 0cca3a4d6ddb
-     ---> 669d806c6a00
-    Removing intermediate container 0cca3a4d6ddb
-    Successfully built 669d806c6a00
+     ---> Running in 072a191bcfd3
+     ---> dac4dc3a3f3e
+    Removing intermediate container 072a191bcfd3
+    Successfully built dac4dc3a3f3e
+    [tangfx@localhost cw-docker]$
+
+
+    [tangfx@localhost cw-docker]$ docker images | grep clearwater
+    docker.io/tangfeixiong/clearwater-base-onbuild        1611180614.gitrev-c2da9c9   dac4dc3a3f3e        20 seconds ago      540.6 MB
+    docker.io/tangfeixiong/clearwater-sprout              1611180614.gitrev-c2da9c9   f02626e19a4c        8 hours ago         631.9 MB
+    docker.io/tangfeixiong/clearwater-ralf                1611180614.gitrev-c2da9c9   a7181ba36557        8 hours ago         606.2 MB
+    docker.io/tangfeixiong/clearwater-homestead           1611180614.gitrev-c2da9c9   63ace52bb817        8 hours ago         759.9 MB
+    docker.io/tangfeixiong/clearwater-homer               1611180614.gitrev-c2da9c9   de4ca4fff31d        9 hours ago         690.4 MB
+    docker.io/tangfeixiong/clearwater-ellis               1611180614.gitrev-c2da9c9   b7b794efd5f8        9 hours ago         790.3 MB
+    docker.io/tangfeixiong/clearwater-bono                1611180614.gitrev-c2da9c9   168582028e03        9 hours ago         614 MB
+    tangfeixiong/clearwater-base-onbuild                  latest                      e3dad2f72092        31 hours ago        562.9 MB
+    tangfeixiong/clearwater-base                          latest                      e35fad0e4d71        31 hours ago        562.9 MB
+    clearwater/base                                       latest                      4a95e0ab2713        42 hours ago        570.4 MB
