@@ -21,7 +21,7 @@ SED_BIN := $(shell which sed)
 
 COMPONENTS := bono ellis homer homestead ralf sprout cassandra chronos memcached
 
-.PHONY: all $(COMPONENTS)
+.PHONY: all base $(COMPONENTS)
 
 all: $(COMPONENTS)
 
@@ -36,36 +36,43 @@ $(COMPONENTS) : | base
 		$(DOCKER_BIN) build --tag=$(IMG_NS)/$(value $(shell echo $@ | tr a-z A-Z)_NAME):$(IMG_TAG) --file=$(CTX_ROOT)/$@/Dockerfile.$@ $(CTX_ROOT)/$@
 
 # Deprecated
+
+.PHONY: cw-bono
 cw-bono : TGT := bono
 cw-bono : IMG := $(IMG_NS)/$(BONO_NAME):$(IMG_TAG)
 cw-bono :
 		$(SED_BIN) "s%^FROM .*%FROM $(IMG_NS)/$(BASE_NAME):$(IMG_TAG)%" $(TGT)/Dockerfile > $(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT)
 		$(DOCKER_BIN) build --tag=$(IMG) --file=$(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT) $(CTX_ROOT)/$(TGT)
 
+.PHONY: cw-ellis
 cw-ellis : TGT := ellis
 cw-ellis : IMG := $(IMG_NS)/$(ELLIS_NAME):$(IMG_TAG)
 cw-ellis :
 		$(SED_BIN) "s%^FROM .*%FROM $(IMG_NS)/$(BASE_NAME):$(IMG_TAG)%" $(TGT)/Dockerfile > $(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT)
 		$(DOCKER_BIN) build --tag=$(IMG) --file=$(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT) $(CTX_ROOT)/$(TGT)
 
+.PHONY: homer
 cw-homer : TGT := homer
 cw-homer : IMG := $(IMG_NS)/$(HOMER_NAME):$(IMG_TAG)
 cw-homer :
 		$(SED_BIN) "s%^FROM .*%FROM $(IMG_NS)/$(BASE_NAME):$(IMG_TAG)%" $(TGT)/Dockerfile > $(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT)
 		$(DOCKER_BIN) build --tag=$(IMG) --file=$(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT) $(CTX_ROOT)/$(TGT)
 
+.PHONY: homestead
 cw-homestead : TGT := homestead
 cw-homestead : IMG := $(IMG_NS)/$(HOMESTEAD_NAME):$(IMG_TAG)
 cw-homestead :
 		$(SED_BIN) "s%^FROM .*%FROM $(IMG_NS)/$(BASE_NAME):$(IMG_TAG)%" $(TGT)/Dockerfile > $(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT)
 		$(DOCKER_BIN) build --tag=$(IMG) --file=$(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT) $(CTX_ROOT)/$(TGT)
 
+.PHONY: ralf
 cw-ralf : TGT := ralf
 cw-ralf : IMG := $(IMG_NS)/$(RALF_NAME):$(IMG_TAG)
 cw-ralf :
 		$(SED_BIN) "s%^FROM .*%FROM $(IMG_NS)/$(BASE_NAME):$(IMG_TAG)%" $(TGT)/Dockerfile > $(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT)
 		$(DOCKER_BIN) build --tag=$(IMG) --file=$(CTX_ROOT)/$(TGT)/Dockerfile.$(TGT) $(CTX_ROOT)/$(TGT)
 
+.PHONY: sprout
 cw-sprout : TGT := sprout
 cw-sprout : IMG := $(IMG_NS)/$(SPROUT_NAME):$(IMG_TAG)
 cw-sprout :
