@@ -1,0 +1,17 @@
+# FROM clearwater/base
+FROM docker.io/tangfeixiong/clearwater-base-onbuild:1611180614.gitrev-c2da9c9
+MAINTAINER tangfeixiong<tangfx128@gmail.com>
+# inspired by: maintainers@projectclearwater.org
+
+ADD *supervisord.conf /etc/supervisor/conf.d/
+
+RUN apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes homestead-cassandra homestead-prov-cassandra homer-cassandra \
+  && sed -e 's/-c cassandra/-c root/g' -i /etc/init.d/cassandra \
+  && mv /etc/supervisor/conf.d/cassandra.supervisord.conf /etc/supervisor/conf.d/cassandra.conf \
+  && mv /etc/supervisor/conf.d/clearwater-group.supervisord.conf /etc/supervisor/conf.d/clearwater-group.conf \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY start_cassandra.sh /usr/bin/start_cassandra.sh
+
+EXPOSE 9160 7001 9142 7000 9042

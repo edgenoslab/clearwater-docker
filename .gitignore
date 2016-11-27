@@ -3,3 +3,11 @@ hack/kubernetes-clearwater/*.gpg
 hack/kubernetes-clearwater/openshift*
 hack/**/http%3A%2F%2Frepo.cw-ngv.com%2Frepo-key
 hack/**/*.tangfx
+
+hack/kubernetes-clearwater/clearwater-ralf-deepdive.md
+hack/kubernetes-clearwater/clearwater-sprout-deepdive.md
+hack/kubernetes-clearwater/clearwater/cluster-config-mgmt.md
+hack/kubernetes-clearwater/clearwater/cluster-into-docker.md
+hack/kubernetes-clearwater/clearwater/ellis-k8s-devops.md
+hack/kubernetes-clearwater/clearwater/k8s-manifests/
+

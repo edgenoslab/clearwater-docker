@@ -1,0 +1,56 @@
+FROM ubuntu:14.04
+MAINTAINER tangfeixiong <tangfx128@gmail.com>
+# Inspired by: maintainers@projectclearwater.org
+
+ARG UBUNTU_REPO_MIRROR="http://mirrors.aliyun.com/"
+ARG CW_NGV_REPO_MIRROR="http://10.64.33.1:48080/16-mirror/ubuntu/trusty/apt-mirror/mirror/repo.cw-ngv.com/stable"
+ARG CW_NGV_REPO_GPG_KEY_URL="http://10.64.33.1:48080/16-mirror/ubuntu/trusty/apt-mirror/gpg-key/http%253A%252F%252Frepo.cw-ngv.com"
+
+ADD *supervisord.conf /etc/supervisor/conf.d/
+ADD sysctl /sbin/sysctl
+ADD liveness.sh /usr/share/kubernetes/
+
+RUN ( [ -z $UBUNTU_REPO_MIRROR ] \
+        || sed -i "s%http://archive.ubuntu.com/%$UBUNTU_REPO_MIRROR%g;s%http://security.ubuntu.com/%$UBUNTU_REPO_MIRROR%g" /etc/apt/sources.list ) \
+  && apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor curl \
+  && mkdir -p /var/run/sshd /var/log/supervisor \
+  && echo 'root:root' | chpasswd \
+  && sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+  && locale-gen en_US.UTF-8 \
+  && sed -e 's/\#\(precedence ::ffff:0:0\/96  100\)/\1/g' -i /etc/gai.conf \
+  && ( [ -n $CW_NGV_REPO_MIRROR ] \
+        && echo deb $CW_NGV_REPO_MIRROR binary/ > /etc/apt/sources.list.d/clearwater.list \
+        || echo deb http://repo.cw-ngv.com/stable binary/ > /etc/apt/sources.list.d/clearwater.list ) \
+  && ( [ -n $CW_NGV_REPO_GPG_KEY_URL ] \
+        && curl -sL $CW_NGV_REPO_MIRROR/repo_key | apt-key add - \
+        || curl -L http://repo.cw-ngv.com/repo_key | apt-key add - ) \
+  && apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
+        clearwater-infrastructure \
+		clearwater-auto-config-docker \
+		clearwater-management \
+  && /etc/init.d/clearwater-auto-config-docker restart \
+  && /etc/init.d/clearwater-infrastructure restart \
+  && cd /etc/supervisor/conf.d/ \
+  && mv clearwater-infrastructure.supervisord.conf clearwater-infrastructure.conf \
+  && mv clearwater-group.supervisord.conf clearwater-group.conf \
+  && apt-get install -y netcat-openbsd \
+  && sed -i 's/SCTP_streams.*/No_SCTP;/' /usr/share/clearwater/bin/generic_create_diameterconf \
+  && sed -i 's/scscf.sprout/sprout/' /etc/init.d/clearwater-auto-config-docker \
+  && sed -i 's/^\( \+sprout_hostname=.*\)/\1\n    icscf_uri="sip:\$sprout_hostname:5052;transport=tcp"/' /etc/init.d/clearwater-auto-config-docker \
+  && sed -i 's/^\( \+sprout_hostname=.*\)/\1\n    scscf_uri="sip:\$sprout_hostname:5054;transport=tcp"/' /etc/init.d/clearwater-auto-config-docker \
+  && sed -i 's/^\( \+s\/^sprout_hostname=.*\)/\1\n    s\/^icscf_uri=.*\/icscf_uri="'\''$icscf_uri'\''"\//' /etc/init.d/clearwater-auto-config-docker \
+  && sed -i 's/^\( \+s\/^sprout_hostname=.*\)/\1\n    s\/^scscf_uri=.*\/scscf_uri="'\''$scscf_uri'\''"\//' /etc/init.d/clearwater-auto-config-docker \
+  && echo "scscf_uri=\"sip:sprout:5054;transport=tcp\"" >> /etc/clearwater/shared_config \
+  && echo "icscf_uri=\"sip:sprout:5052;transport=tcp\"" >> /etc/clearwater/shared_config \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV LANG=en_US.UTF-8 \
+  LANGUAGE=en_US:en \
+  LC_ALL=en_US.UTF-8
+
+ONBUILD USER root
+ONBUILD EXPOSE 22
+ONBUILD CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+

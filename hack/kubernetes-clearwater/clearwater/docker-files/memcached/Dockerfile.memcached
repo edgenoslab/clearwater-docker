@@ -1,0 +1,14 @@
+# FROM clearwater/base-onbuild
+FROM docker.io/tangfeixiong/clearwater-base-onbuild:1611180614.gitrev-c2da9c9
+MAINTAINER tangfeixiong <tangfx128@gamil.com>
+# Inspired by: maintainers@projectclearwater.org
+
+ADD *supervisord.conf /etc/supervisor/conf.d/
+
+RUN apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes clearwater-memcached \
+  && mv /etc/supervisor/conf.d/memcached.supervisord.conf /etc/supervisor/conf.d/memcached.conf \
+  && mv /etc/supervisor/conf.d/clearwater-group.supervisord.conf /etc/supervisor/conf.d/clearwater-group.conf \
+  && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 11211
