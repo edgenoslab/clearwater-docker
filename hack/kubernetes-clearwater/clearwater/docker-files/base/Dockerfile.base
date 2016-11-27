@@ -4,14 +4,14 @@ MAINTAINER tangfeixiong <tangfx128@gmail.com>
 
 ARG UBUNTU_REPO_MIRROR="http://mirrors.aliyun.com/"
 ARG CW_NGV_REPO_MIRROR="http://10.64.33.1:48080/16-mirror/ubuntu/trusty/apt-mirror/mirror/repo.cw-ngv.com/stable"
-ARG CW_NGV_REPO_GPG_KEY_URL="http://10.64.33.1:48080/16-mirror/ubuntu/trusty/apt-mirror/gpg-key/http%253A%252F%252Frepo.cw-ngv.com"
+ARG CW_NGV_REPO_GPG_KEY_URL="http://10.64.33.1:48080/16-mirror/ubuntu/trusty/apt-mirror/gpg-key/http%253A%252F%252Frepo.cw-ngv.com/repo_key"
 
 ADD *supervisord.conf /etc/supervisor/conf.d/
 ADD sysctl /sbin/sysctl
 ADD liveness.sh /usr/share/kubernetes/
 
-RUN ( [ -z $UBUNTU_REPO_MIRROR ] \
-        || sed -i "s%http://archive.ubuntu.com/%$UBUNTU_REPO_MIRROR%g;s%http://security.ubuntu.com/%$UBUNTU_REPO_MIRROR%g" /etc/apt/sources.list ) \
+RUN ( [ -n $UBUNTU_REPO_MIRROR ] \
+        && sed -i "s%http://archive.ubuntu.com/%$UBUNTU_REPO_MIRROR%g;s%http://security.ubuntu.com/%$UBUNTU_REPO_MIRROR%g" /etc/apt/sources.list ) \
   && apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor curl \
   && mkdir -p /var/run/sshd /var/log/supervisor \
@@ -23,7 +23,7 @@ RUN ( [ -z $UBUNTU_REPO_MIRROR ] \
         && echo deb $CW_NGV_REPO_MIRROR binary/ > /etc/apt/sources.list.d/clearwater.list \
         || echo deb http://repo.cw-ngv.com/stable binary/ > /etc/apt/sources.list.d/clearwater.list ) \
   && ( [ -n $CW_NGV_REPO_GPG_KEY_URL ] \
-        && curl -sL $CW_NGV_REPO_MIRROR/repo_key | apt-key add - \
+        && curl -sL $CW_NGV_REPO_GPG_KEY_URL | apt-key add - \
         || curl -L http://repo.cw-ngv.com/repo_key | apt-key add - ) \
   && apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
@@ -32,9 +32,8 @@ RUN ( [ -z $UBUNTU_REPO_MIRROR ] \
 		clearwater-management \
   && /etc/init.d/clearwater-auto-config-docker restart \
   && /etc/init.d/clearwater-infrastructure restart \
-  && cd /etc/supervisor/conf.d/ \
-  && mv clearwater-infrastructure.supervisord.conf clearwater-infrastructure.conf \
-  && mv clearwater-group.supervisord.conf clearwater-group.conf \
+  && mv /etc/supervisor/conf.d/clearwater-infrastructure.supervisord.conf /etc/supervisor/conf.d/clearwater-infrastructure.conf \
+  && mv /etc/supervisor/conf.d/clearwater-group.supervisord.conf /etc/supervisor/conf.d/clearwater-group.conf \
   && apt-get install -y netcat-openbsd \
   && sed -i 's/SCTP_streams.*/No_SCTP;/' /usr/share/clearwater/bin/generic_create_diameterconf \
   && sed -i 's/scscf.sprout/sprout/' /etc/init.d/clearwater-auto-config-docker \
