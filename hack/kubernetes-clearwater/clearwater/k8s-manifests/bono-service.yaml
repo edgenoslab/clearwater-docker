@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bono
+  namespace: default
+  labels:
+    proxy: docker
+spec:
+  clusterIP: None  # Because we use docker proxy or pod hostnetwork
+  ports:
+  - name: "stun3478"
+    port: 3478
+  - name: "sip5060"
+    port: 5060
+  - name: "sip5062"
+    port: 5062
+  - name: "sip5060udp"
+    port: 5060
+    protocol: UDP
+  - name: "sip5062udp"
+    port: 5062
+    protocol: UDP
+  selector:
+    service: bono
