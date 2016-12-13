@@ -1,0 +1,51 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    service: bono
+  name: bono
+  namespace: default
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      service: bono
+  template:
+    metadata:
+      labels:
+        service: bono
+    spec:
+      containers:
+      - image: 10.64.33.81:5000/admin/clearwater_bono # docker.io/tangfeixiong/clearwater-bono:1611280555.gitrev-3e9722f
+        name: bono
+        ports:
+        - containerPort: 22
+        - containerPort: 3478
+          hostPort: 3478  # Currently we use docker proxy, maybe pod hostnetwork
+        - containerPort: 5060
+          hostPort: 5060
+        - containerPort: 5062
+          hostPort: 5062
+        - containerPort: 5060
+          protocol: UDP
+        - containerPort: 5062
+          protocol: UDP
+        env:
+        # - name: ETCD_PROXY
+        #   value: default=http://10.64.33.81:2380
+        # - name: ZONE
+        #   value: default.svc.cluster.local
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        # livenessProbe:
+        #   exec:
+        #     command: ["/bin/bash", "/usr/share/kubernetes/liveness.sh", "3478 5060 5062"]
+        #   initialDelaySeconds: 30
+        # readinessProbe:
+        #   exec:
+        #     command: ["/bin/bash", "/usr/share/kubernetes/liveness.sh", "3478 5060 5062"]
+      restartPolicy: Always

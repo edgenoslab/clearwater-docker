@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: memcached
+  name: ralf
   namespace: default
 spec:
   clusterIP: None
   ports:
-  - name: "11211"
-    port: 11211
+  - name: "10888"
+    port: 10888
   selector:
-    service: memcached
+    service: ralf

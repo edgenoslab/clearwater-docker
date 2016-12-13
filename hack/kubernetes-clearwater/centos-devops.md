@@ -132,3 +132,48 @@ For *wget*
     Usage: wget [OPTION]... [URL]...
 
     Try `wget --help' for more options.
+
+For __NTP__
+
+	[tangfx@localhost k8s-manifests]$ sudo dnf install chrony
+	Last metadata expiration check: 2:34:08 ago on Fri Dec  9 04:46:01 2016.
+	Dependencies resolved.
+	================================================================================
+	 Package           Arch           Version                 Repository       Size
+	================================================================================
+	Installing:
+	 chrony            x86_64         2.4.1-1.fc23            updates         225 k
+	 timedatex         x86_64         0.3-3.fc23              fedora           30 k
+
+	Transaction Summary
+	================================================================================
+	Install  2 Packages
+
+	[tangfx@localhost k8s-manifests]$ sudo systemctl enable chronyd.service
+	[tangfx@localhost k8s-manifests]$ sudo systemctl start chronyd.service
+	[tangfx@localhost k8s-manifests]$ sudo timedatectl
+		  Local time: Fri 2016-12-09 07:21:32 CST
+	  Universal time: Thu 2016-12-08 23:21:32 UTC
+			RTC time: Thu 2016-12-08 23:21:32
+		   Time zone: Asia/Shanghai (CST, +0800)
+	 Network time on: yes
+	NTP synchronized: no
+	 RTC in local TZ: no
+
+	[tangfx@localhost k8s-manifests]$ sudo timedatectl set-timezone UTC
+
+	[tangfx@localhost k8s-manifests]$ sudo chronyc -a makestep
+	200 OK
+		 
+	[tangfx@localhost k8s-manifests]$ sudo timedatectl set-ntp yes	 
+
+	[tangfx@localhost k8s-manifests]$ sudo date --set "2016-12-09 09:08:37" --utc   Fri Dec  9 09:08:37 UTC 2016
+	[tangfx@localhost k8s-manifests]$ sudo hwclock --set --utc --date "`date`"
+	[tangfx@localhost k8s-manifests]$ sudo timedatectl
+		  Local time: Fri 2016-12-09 09:09:12 UTC
+	  Universal time: Fri 2016-12-09 09:09:12 UTC
+			RTC time: Fri 2016-12-09 09:09:12
+		   Time zone: UTC (UTC, +0000)
+	 Network time on: yes
+	NTP synchronized: yes
+	 RTC in local TZ: no

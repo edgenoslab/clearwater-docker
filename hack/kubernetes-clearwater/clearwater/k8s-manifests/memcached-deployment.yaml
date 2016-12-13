@@ -18,25 +18,25 @@ spec:
         service: memcached
     spec:
       containers:
-      - image: docker.io/tangfeixiong/clearwater-memcached:1611180614.gitrev-c2da9c9
+      - image: 10.64.33.81:5000/admin/clearwater_memcached # docker.io/tangfeixiong/clearwater-memcached:1611280555.gitrev-3e9722f
         name: memcached
         ports:
         - containerPort: 22
         - containerPort: 11211
         env:
-        - name: ETCD_PROXY
-          value: default=http://10.64.33.81:2380
+        # - name: ETCD_PROXY
+        #   value: default=http://10.64.33.81:2380
         # - name: ZONE
-        #   value: clearwater.local
+        #   value: default.svc.cluster.local
         - name: MY_POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        livenessProbe:
-          tcpSocket:
-            port: 11211
-          initialDelaySeconds: 30
-        readinessProbe:
-          tcpSocket:
-            port: 11211
+        # livenessProbe:
+        #   tcpSocket:
+        #     port: 11211
+        #   initialDelaySeconds: 30
+        # readinessProbe:
+        #   tcpSocket:
+        #     port: 11211
       restartPolicy: Always
