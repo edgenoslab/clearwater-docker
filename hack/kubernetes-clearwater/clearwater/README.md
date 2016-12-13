@@ -301,7 +301,7 @@ Then
 	deployment "bono" created
 	deployment "ellis" created
 
-bono
+_bono_
 
 	root@bono-2501630498-nntnh:~# netstat -tpnl
 	Active Internet connections (only servers)
@@ -361,7 +361,7 @@ bono
 	12-12-2016 19:22:12.293 UTC Warning (Net-SNMP): Warning: Failed to connect to the agentx master agent ([NIL]):
 
 
-ellis
+_ellis_
 
 	root@ellis-3923004842-g7gzg:~# netstat -tpnl
 	Active Internet connections (only servers)
