@@ -1,4 +1,4 @@
-# KUBE_APISERVER_VERSION=1.3.10
+# KUBE_APISERVER_VERSION=1.3.7
 
 # --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
 
@@ -6,7 +6,6 @@
 # ADVERTISE_APISERVER=10.64.33.81
 
 # --cert-dir="/var/run/kubernetes"
-# CERT_DIR=/srv/kubernetes
 
 # --enable-swagger-ui[=false]: Enables swagger ui at /swagger-ui
 # ENABLE_SWAGGER_UI=false
@@ -14,7 +13,7 @@
 # --etcd-servers=: comma separated etcd servers to connect (http://ip:port)
 # ETCD_SERVERS=http://10.64.33.81:2379
 
-# --master-service-namespace="default": in which the kubernetes master services should be injected into pods
+# --master-service-namespace="default": The master should be injected into pods
 
 # --runtime-config=: A set of key=value pairs such as apis/<groupVersion>=true/false, also  apis/<groupVersion>/<resource>
 # RUNTIME_CONFIG=api/all=true
@@ -31,27 +30,94 @@
 
 # --service-node-port-range=: default '30000-32767'
 
-KUBE_APISERVER_OPTS="--admission-control=AlwaysAdmit \
+#
+# OIDC plugin ready
+#
+
+KUBE_APISERVER_OPTS=" \
+  --admission-control=SecurityContextDeny,ServiceAccount \
   --advertise-address=10.64.33.81 \
   --allow-privileged=true \
   --apiserver-count=1 \
   --bind-address=0.0.0.0 \
-  --cert-dir=/srv/kubernetes \
-  --client-ca-file=/srv/kubernetes/ca.crt \
+  --cert-dir=/var/run/kubernetes \
+  --client-ca-file=/etc/kubernetes/cacerts/ca.crt \
   --enable-garbage-collector=false \
   --enable-swagger-ui=false \
   --etcd-servers=http://10.64.33.81:2379 \
-  --insecure-bind-address=127.0.0.1 \
+  --insecure-bind-address=10.64.33.81 \
   --insecure-port=8080 \
-  --kubelet-certificate-authority=/srv/kubernetes/ca.crt \
-  --kubelet-client-certificate=/srv/kubernetes/kubecfg.crt \
-  --kubelet-client-key=/srv/kubernetes/kubecfg.key \
   --kubelet-https=true \
   --master-service-namespace=default \
+  --oidc-issuer-url=https://www.10.64.33.90.xip.io:5556 \
+  --oidc-client-id=example-app \
+  --oidc-ca-file=/etc/coreos/dex/ca.crt \
+  --oidc-username-claim=email \
+  --oidc-groups-claim=groups \
   --runtime-config=api/all=true \
   --secure-port=6443 \
-  --service-account-key-file=/srv/kubernetes/server.key \
+  --service-account-key-file=/etc/kubernetes/cacerts/server.key \
   --service-cluster-ip-range=10.123.240.0/20 \
-  --tls-cert-file=/srv/kubernetes/server.cert \
-  --tls-private-key-file=/srv/kubernetes/server.key \
-  --v=2"
+  --tls-cert-file=/etc/kubernetes/cacerts/server.cert \
+  --tls-private-key-file=/etc/kubernetes/cacerts/server.key \
+  --v=2 \
+"
+
+#
+# X509 only
+#
+
+# KUBE_APISERVER_OPTS=" \
+#   --admission-control=SecurityContextDeny,ServiceAccount \
+#   --advertise-address=10.64.33.81 \
+#   --allow-privileged=true \
+#   --apiserver-count=1 \
+#   --bind-address=0.0.0.0 \
+#   --cert-dir=/var/run/kubernetes \
+#   --client-ca-file=/etc/kubernetes/cacerts/ca.crt \
+#   --enable-garbage-collector=false \
+#   --enable-swagger-ui=false \
+#   --etcd-servers=http://10.64.33.81:2379 \
+#   --insecure-bind-address=10.64.33.81 \
+#   --insecure-port=8080 \
+#   --kubelet-https=true \
+#   --master-service-namespace=default \
+#   --runtime-config=api/all=true \
+#   --secure-port=6443 \
+#   --service-account-key-file=/etc/kubernetes/cacerts/server.key \
+#   --service-cluster-ip-range=10.123.240.0/20 \
+#   --tls-cert-file=/etc/kubernetes/cacerts/server.cert \
+#   --tls-private-key-file=/etc/kubernetes/cacerts/server.key \
+#   --v=2 \
+# "
+
+#
+# kubelet certification
+#
+
+# KUBE_APISERVER_OPTS=" \
+#   --admission-control=SecurityContextDeny,ServiceAccount \
+#   --advertise-address=10.64.33.81 \
+#   --allow-privileged=true \
+#   --apiserver-count=1 \
+#   --bind-address=0.0.0.0 \
+#   --cert-dir=/var/run/kubernetes \
+#   --client-ca-file=/etc/kubernetes/cacerts/ca.crt \
+#   --enable-garbage-collector=false \
+#   --enable-swagger-ui=false \
+#   --etcd-servers=http://10.64.33.81:2379 \
+#   --insecure-bind-address=10.64.33.81 \
+#   --insecure-port=8080 \
+#   --kubelet-certificate-authority=/etc/kubernetes/cacerts/ca.crt \
+#   --kubelet-client-certificate=/etc/kubernetes/cacerts/kubelet.cert \
+#   --kubelet-client-key=/etc/kubernetes/cacerts/kubelet.key \
+#   --kubelet-https=true \
+#   --master-service-namespace=default \
+#   --runtime-config=api/all=true \
+#   --secure-port=6443 \
+#   --service-account-key-file=/etc/kubernetes/cacerts/server.key \
+#   --service-cluster-ip-range=10.123.240.0/20 \
+#   --tls-cert-file=/etc/kubernetes/cacerts/server.cert \
+#   --tls-private-key-file=/etc/kubernetes/cacerts/server.key \
+#   --v=2 \
+# "

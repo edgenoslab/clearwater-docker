@@ -1,4 +1,4 @@
-# KUBELET_VERSION=1.3.7
+# KUBELET_VERSION=1.3.10
 
 # --api-servers=[]: Comma separated list of Kubernetes API servers (ip:port).
 # API_SERVERS=https://10.64.33.81:6443
@@ -9,7 +9,7 @@
 # CONFIG_PATH=/etc/kubernetes/manifests
 
 # --hostname-override="": As identification instad of the actual hostname
-# HOSTNAME_OVERRIDE=10.64.33.81
+# HOSTNAME_OVERRIDE=10.64.33.90
 
 # --kubeconfig="/var/lib/kubelet/kubeconfig": Path to a kubeconfig file
 # KUBECONFIG_PATH=/etc/kubernetes/cacerts/kubeconfig
@@ -18,7 +18,7 @@
 
 # --service-cluster-ip-range=<nil>: A CIDR notation IP range
 # Same as GKE, cluster CIDR: 10.120.0.0/14, service CIDR: 10.123.240.0/20
-# CLUSTER_CIDR=10.120.0.0/14
+# CLUSTER_CIDR=10.123.240.0/14
 # SERVICE_CIDR=10.123.240.0/20
 # CLUSTER_MASTER=10.123.240.1
 # CLUSTER_DNS=10.123.240.10
@@ -27,36 +27,19 @@
 # TLS_SERVER_KEY=/etc/kubernetes/cacerts/kubelet.key
 
 KUBELET_OPTS=" \
-  --address=10.64.33.81 \
+  --address=10.64.33.90 \
   --allow-privileged=true \
   --api-servers=https://10.64.33.81:6443 \
-  --cadvisor-port=4194 \
-  --cert-dir=/var/run/kubernetes \
   --cluster-dns=10.123.240.10 \
   --cluster-domain=cluster.local \
   --config=/etc/kubernetes/manifests \
-  --configure-cbr0=false \
-  --container-runtime=docker \
-  --docker=unix:///var/run/docker.sock \
-  --healthz-bind-address=127.0.0.1 \
-  --healthz-port=10248 \
-  --hostname-override=10.64.33.81 \
+  --hostname-override=10.64.33.90 \
   --kubeconfig=/etc/kubernetes/cacerts/kubeconfig \
-  --master-service-namespace=default \
-  --max-open-files=1000000 \
-  --max-pods=110 \
-  --node-ip=10.64.33.81 \
-  --non-masquerade-cidr=10.0.0.0/8 \
-  --pod-infra-container-image=gcr.io/google_containers/pause-amd64:3.0 \
-  --pods-per-core=0 \
-  --port=10250 \
-  --read-only-port=10255 \
-  --root-dir=/var/lib/kubelet \
+  --node-ip=10.64.33.90 \
   --v=2 \
 "
 
-# KUBELET_OPTS=" \
-#   --address=10.64.33.81 \
+# KUBELET_OPTS="--address=10.64.33.90 \
 #   --allow-privileged=true \
 #   --api-servers=https://10.64.33.81:6443 \
 #   --cadvisor-port=4194 \
@@ -69,12 +52,12 @@ KUBELET_OPTS=" \
 #   --docker=unix:///var/run/docker.sock \
 #   --healthz-bind-address=127.0.0.1 \
 #   --healthz-port=10248 \
-#   --hostname-override=10.64.33.81 \
+#   --hostname-override=10.64.33.90 \
 #   --kubeconfig=/etc/kubernetes/cacerts/kubeconfig \
 #   --master-service-namespace=default \
 #   --max-open-files=1000000 \
 #   --max-pods=110 \
-#   --node-ip=10.64.33.81 \
+#   --node-ip=10.64.33.90 \
 #   --non-masquerade-cidr=10.0.0.0/8 \
 #   --pod-infra-container-image=gcr.io/google_containers/pause-amd64:3.0 \
 #   --pods-per-core=0 \
@@ -83,5 +66,4 @@ KUBELET_OPTS=" \
 #   --root-dir=/var/lib/kubelet \
 #   --tls-cert-file=/etc/kubernetes/cacerts/kubelet.crt \
 #   --tls-private-key-file=/etc/kubernetes/cacerts/kubelet.key \
-#   --v=2 \
-# "
+#   --v=2"

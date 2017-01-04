@@ -15,14 +15,16 @@
 # CLUSTER_MASTER=10.123.240.1
 # CLUSTER_DNS=10.123.240.10
 
-KUBE_CONTROLLER_MANAGER_OPTS="--address=10.64.33.81 \
+KUBE_CONTROLLER_MANAGER_OPTS=" \
+  --address=10.64.33.81 \
   --cluster-cidr=10.120.0.0/14 \
   --cluster-name=kubernetes \
   --enable-garbage-collector=false \
-  --kubeconfig=/srv/kubernetes/kubeconfig \
+  --kubeconfig=/etc/kubernetes/cacerts/kubeconfig \
   --master=https://10.64.33.81:6443 \
   --port=10252 \
-  --root-ca-file=/srv/kubernetes/ca.crt \
-  --service-account-private-key-file=/srv/kubernetes/server.key \
+  --root-ca-file=/etc/kubernetes/cacerts/ca.crt \
+  --service-account-private-key-file=/etc/kubernetes/cacerts/server.key \
   --service-cluster-ip-range=10.123.240.0/20 \
-  --v=2"
+  --v=2 \
+"
